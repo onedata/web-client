@@ -35,29 +35,25 @@ end_per_suite(Config) ->
     Config.
 
 test_text_frames(_) ->
-    try
-        {ok, Pid} = ws_client:start_link(),
-        %% Short message
-        Short = short_msg(),
-        ws_client:send_text(Pid, Short),
-        {text, Short} = ws_client:recv(Pid),
-        %% Payload length greater than 125 (actual 150).
-        Medium = medium_msg(),
-        ws_client:send_text(Pid, Medium),
-        {text, Medium} = ws_client:recv(Pid),
+    {ok, Pid} = ws_client:start_link(),
+    %% Short message
+    Short = short_msg(),
+    ws_client:send_text(Pid, Short),
+    {text, Short} = ws_client:recv(Pid),
+    %% Payload length greater than 125 (actual 150).
+    Medium = medium_msg(),
+    ws_client:send_text(Pid, Medium),
+    {text, Medium} = ws_client:recv(Pid),
 
-        %% Now check that websocket_client:send is working
-        Pid ! {send_text, Medium},
-        {text, Medium} = ws_client:recv(Pid),
+    %% Now check that websocket_client:send is working
+    Pid ! {send_text, Medium},
+    {text, Medium} = ws_client:recv(Pid),
 
-        %% Payload length greater than 65535
-        Long = long_msg(),
-        ws_client:send_text(Pid, Long),
-        {text, Long} = ws_client:recv(Pid),
-        ws_client:stop(Pid)
-    catch T:M ->
-        ct:print("HIOHO!~n~n~p~n", [{T, M, erlang:get_stacktrace()}])
-    end,
+    %% Payload length greater than 65535
+    Long = long_msg(),
+    ws_client:send_text(Pid, Long),
+    {text, Long} = ws_client:recv(Pid),
+    ws_client:stop(Pid),
     ok.
 
 test_binary_frames(_) ->

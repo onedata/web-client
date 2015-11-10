@@ -34,9 +34,9 @@ test-deps:
 	fi
 	@cd test-deps/cowboy && ../../rebar get-deps && ../../rebar compile
 
-test: test-deps
+test: compile test-deps
 	mkdir -p .ct_results
-	ct_run -pa test-deps/cowboy/ebin test-deps/cowboy/deps/ranch/ebin ebin \
+	ct_run -pa test-deps/cowboy/ebin test-deps/cowboy/deps/ranch/ebin test-deps/cowboy/deps/cowlib/ebin ebin \
 	-dir ct \
 	-logdir ./.ct_results \
 	-cover ct/websocket_client.coverspec
