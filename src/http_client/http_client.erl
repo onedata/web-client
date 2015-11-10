@@ -15,16 +15,13 @@
 %% 'insecure' option.
 %%
 %% To pass ssl options to hackney, use the option {ssl_options, [<Options>]}.
-%%
 %% @end
 %% ===================================================================
 -module(http_client).
--author("lopiola").
 
--include("logging.hrl").
 -include_lib("hackney/include/hackney_lib.hrl").
 
-% Allowes m ethods - standard HTTP/1.1 and some more
+% Allowed methods - standard HTTP/1.1 and some more
 -type method() :: delete | get | head | post | put | connect | options | trace |
 copy | lock | mkcol | move | propfind | proppatch | search | unlock | %% WEBDAV
 report | mkactivity | checkout | merge | %% SUBVERSION
@@ -41,9 +38,6 @@ patch | purge. %% RFC-5789
 % Response code
 -type code() :: integer().
 
-
--export_type([method/0, url/0, headers/0, body/0, opts/0, code/0]).
-
 %% API - convenience functions
 -export([get/1, get/2, get/3, get/4]).
 -export([post/1, post/2, post/3, post/4]).
@@ -52,23 +46,13 @@ patch | purge. %% RFC-5789
 -export([request/1, request/2, request/3, request/4]).
 % Performs the request
 -export([request/5]).
-% Other
--export([ca_bundle_location/0]).
+
+-export_type([method/0, url/0, headers/0, body/0, opts/0, code/0]).
 
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Informs where CA bundle is expected to be found. It is required
-%% for server cert verification
-%% @end
-%%--------------------------------------------------------------------
-ca_bundle_location() ->
-    "/etc/ssl/cert.pem".
-
 
 %%--------------------------------------------------------------------
 %% @doc

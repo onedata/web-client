@@ -5,12 +5,13 @@
 %% cited in 'LICENSE.txt'.
 %% @end
 %% ===================================================================
-%% @doc This module is an implementation hackney transport interface.
+%% @doc This module is an implementation of hackney transport interface.
 %% It uses erlang-tls (ssl2) for communication.
-%%
 %% @end
 %% ===================================================================
 -module(hackney_ssl2_transport).
+
+%% API - conforms to hackney transport API
 -export([messages/1,
     connect/3, connect/4,
     send/2,
@@ -22,6 +23,11 @@
     shutdown/2,
     sockname/1
 ]).
+
+
+%%%===================================================================
+%%% API
+%%%===================================================================
 
 %% @doc Atoms used to identify messages in {active, once | true} mode.
 messages(_) ->
