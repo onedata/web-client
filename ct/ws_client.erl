@@ -29,7 +29,7 @@ start_link() ->
     start_link("ws://localhost:8080").
 
 start_link(Url) ->
-    websocket_client:start_link(Url, ?MODULE, []).
+    websocket_client:start_link(Url, ?MODULE, [], []).
 
 stop(Pid) ->
     Pid ! stop.

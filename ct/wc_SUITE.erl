@@ -4,24 +4,23 @@
 -define(print(Value), io:format("~n~p~n", [Value])).
 
 -export([
-         all/0,
-         init_per_suite/1,
-         end_per_suite/1
-        ]).
+    all/0,
+    init_per_suite/1,
+    end_per_suite/1
+]).
 -export([
-         test_text_frames/1,
-         test_binary_frames/1,
-         test_control_frames/1,
-         test_quick_response/1
-        ]).
+    test_text_frames/1,
+    test_binary_frames/1,
+    test_control_frames/1,
+    test_quick_response/1
+]).
 
-all() ->
-    [
-     test_text_frames,
-     test_binary_frames,
-     test_control_frames,
-     test_quick_response
-    ].
+all() -> [
+    test_text_frames,
+    test_binary_frames,
+    test_control_frames,
+    test_quick_response
+].
 
 init_per_suite(Config) ->
     application:start(sasl),
@@ -36,25 +35,29 @@ end_per_suite(Config) ->
     Config.
 
 test_text_frames(_) ->
-    {ok, Pid} = ws_client:start_link(),
-    %% Short message
-    Short = short_msg(),
-    ws_client:send_text(Pid, Short),
-    {text, Short} = ws_client:recv(Pid),
-    %% Payload length greater than 125 (actual 150).
-    Medium = medium_msg(),
-    ws_client:send_text(Pid, Medium),
-    {text, Medium} = ws_client:recv(Pid),
+    try
+        {ok, Pid} = ws_client:start_link(),
+        %% Short message
+        Short = short_msg(),
+        ws_client:send_text(Pid, Short),
+        {text, Short} = ws_client:recv(Pid),
+        %% Payload length greater than 125 (actual 150).
+        Medium = medium_msg(),
+        ws_client:send_text(Pid, Medium),
+        {text, Medium} = ws_client:recv(Pid),
 
-    %% Now check that websocket_client:send is working
-    Pid ! {send_text, Medium},
-    {text, Medium} = ws_client:recv(Pid),
+        %% Now check that websocket_client:send is working
+        Pid ! {send_text, Medium},
+        {text, Medium} = ws_client:recv(Pid),
 
-    %% Payload length greater than 65535
-    Long = long_msg(),
-    ws_client:send_text(Pid, Long),
-    {text, Long} = ws_client:recv(Pid),
-    ws_client:stop(Pid),
+        %% Payload length greater than 65535
+        Long = long_msg(),
+        ws_client:send_text(Pid, Long),
+        {text, Long} = ws_client:recv(Pid),
+        ws_client:stop(Pid)
+    catch T:M ->
+        ct:print("HIOHO!~n~n~p~n", [{T, M, erlang:get_stacktrace()}])
+    end,
     ok.
 
 test_binary_frames(_) ->
@@ -105,21 +108,21 @@ short_msg() ->
     <<"hello">>.
 medium_msg() ->
     <<"ttttttttttttttttttttttttt"
-      "ttttttttttttttttttttttttt"
-      "ttttttttttttttttttttttttt"
-      "ttttttttttttttttttttttttt"
-      "ttttttttttttttttttttttttt"
-      "ttttttttttttttttttttttttt">>.
+    "ttttttttttttttttttttttttt"
+    "ttttttttttttttttttttttttt"
+    "ttttttttttttttttttttttttt"
+    "ttttttttttttttttttttttttt"
+    "ttttttttttttttttttttttttt">>.
 long_msg() ->
     Medium = medium_msg(),
     %% 600 bytes
-    L = << Medium/binary, Medium/binary, Medium/binary, Medium/binary >>,
+    L = <<Medium/binary, Medium/binary, Medium/binary, Medium/binary>>,
     %% 2400 bytes
-    L1 = << L/binary, L/binary, L/binary, L/binary >>,
+    L1 = <<L/binary, L/binary, L/binary, L/binary>>,
     %% 9600 bytes
-    L2 = << L1/binary, L1/binary, L1/binary, L1/binary >>,
+    L2 = <<L1/binary, L1/binary, L1/binary, L1/binary>>,
     %% 38400 bytes
-    L3 = << L2/binary, L2/binary, L2/binary, L2/binary >>,
+    L3 = <<L2/binary, L2/binary, L2/binary, L2/binary>>,
     %% 76800 bytes
-    << L3/binary, L3/binary >>.
+    <<L3/binary, L3/binary>>.
 

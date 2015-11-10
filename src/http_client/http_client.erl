@@ -34,7 +34,7 @@ patch | purge. %% RFC-5789
 % Request / response body
 -type body() :: string() | binary().
 % Request options
--type opts() :: [tuple()].
+-type opts() :: [term()].
 % Response code
 -type code() :: integer().
 
@@ -311,7 +311,6 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
             % @todo maybe it is connected with using custom transport
             % @todo   and hackney calls some callback from default one
             % @todo maybe its ssl2 problem
-            ?debug("Hackney request returned {error, closed}, retrying."),
             do_request(Method, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
         {error, Error} ->
             {error, Error}

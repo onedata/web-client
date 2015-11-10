@@ -1,16 +1,38 @@
-.PHONY: all clean
+.PHONY: all test test-deps clean
 
-all:
-	mkdir -p ebin
-	erlc +debug_info -o ebin -pa ebin src/*.erl
-	erlc +debug_info -o ebin -pa examples src/*.erl
+all: deps compile
+
+deps:
+	@./rebar get-deps
+
+compile:
+	@./rebar compile
 
 clean:
-	rm -rf ebin
+	@./rebar clean
+
+PLT ?= .dialyzer.plt
+
+# Builds dialyzer's Persistent Lookup Table file.
+.PHONY: plt
+plt:
+	dialyzer --check_plt --plt ${PLT}; \
+	if [ $$? != 0 ]; then \
+	    dialyzer --build_plt --output_plt ${PLT} --apps kernel stdlib sasl erts \
+	        ssl tools runtime_tools crypto inets xmerl snmp public_key eunit \
+	        common_test test_server syntax_tools compiler ./deps/*/ebin; \
+	fi; exit 0
+
+# Dialyzes the project.
+dialyzer: plt
+	dialyzer ./ebin --plt ${PLT} -Werror_handling -Wrace_conditions --fullpath
+
 
 test-deps:
-	git clone https://github.com/extend/cowboy.git test-deps/cowboy
-	pushd test-deps/cowboy; make; popd
+	@if [ ! -d "test-deps/cowboy" ]; then \
+		git clone -b websocket_payload_nif https://github.com/RoXeon/cowboy.git test-deps/cowboy; \
+	fi
+	@cd test-deps/cowboy && ../../rebar get-deps && ../../rebar compile
 
 test: test-deps
 	mkdir -p .ct_results
