@@ -331,8 +331,9 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
     {ok, code(), headers(), body()} | {error, term()}.
 do_request(Method, HcknURL, ReqHdrs, ReqBd, Options) ->
     case hackney:request(Method, HcknURL, ReqHdrs, ReqBd, Options) of
-        {ok, Code, RespHeaders} ->
-            {ok, Code, RespHeaders, <<>>};
+        {ok, Ref} ->
+            {ok, RespBody} = hackney:body(Ref),
+            {ok, Code, RespHeaders, RespBody};
         {ok, Code, RespHeaders, Ref} ->
             {ok, RespBody} = hackney:body(Ref),
             {ok, Code, RespHeaders, RespBody};

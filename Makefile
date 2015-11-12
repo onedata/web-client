@@ -11,6 +11,9 @@ compile:
 clean:
 	@./rebar clean
 
+distclean: clean
+	@./rebar delete-deps
+
 PLT ?= .dialyzer.plt
 
 # Builds dialyzer's Persistent Lookup Table file.
