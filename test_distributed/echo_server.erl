@@ -40,16 +40,13 @@ websocket_init(_Transport, Req, _Opts) ->
     end.
 
 websocket_handle(Frame, Req, State) ->
-    io:format("Received frame~n"),
     {reply, Frame, Req, State}.
 
 websocket_info({send, Text}, Req, State) ->
-    io:format("Sent frame~n"),
     {reply, {text, Text}, Req, State};
 
 websocket_info(_Msg, Req, State) ->
     {ok, Req, State}.
 
 websocket_terminate(Reason, _Req, _State) ->
-    io:format("Server terminating with reason ~p~n", [Reason]),
     ok.

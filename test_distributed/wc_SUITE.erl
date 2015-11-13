@@ -1,7 +1,6 @@
 -module(wc_SUITE).
 
 -include_lib("common_test/include/ct.hrl").
--define(print(Value), io:format("~n~p~n", [Value])).
 
 -export([
     all/0,
@@ -28,7 +27,6 @@ init_per_suite(Config) ->
     application:start(ranch),
     application:start(cowboy),
     ok = echo_server:start(),
-    io:format("~p", [ws_client:module_info()]),
     Config.
 
 end_per_suite(Config) ->
