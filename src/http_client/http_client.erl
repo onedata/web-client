@@ -347,6 +347,7 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
         {ok, Code, RespHeaders, RespBody} ->
             {ok, Code, RespHeaders, RespBody};
         {error, closed} ->
+            io:format("~n~n ERROR CLOSED!! ~n~n"),
             % Hackney uses socket pools, sometimes it grabs a
             % disconnected socket and returns {error, closed}.
             % Try again (once) if this happens.
