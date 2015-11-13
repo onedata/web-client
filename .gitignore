@@ -8,3 +8,4 @@ deps
 ebin
 test-deps
 .ct_results
+.eunit

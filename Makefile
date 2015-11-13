@@ -1,4 +1,4 @@
-.PHONY: all test test-deps clean
+.PHONY: all deps test test-deps clean
 
 all: deps compile
 
@@ -37,9 +37,18 @@ test-deps:
 	fi
 	@cd test-deps/cowboy && ../../rebar get-deps && ../../rebar compile
 
-test: compile test-deps
+ct: compile test-deps
 	mkdir -p .ct_results
 	ct_run -pa test-deps/cowboy/ebin test-deps/cowboy/deps/ranch/ebin test-deps/cowboy/deps/cowlib/ebin ebin \
 	-dir ct \
 	-logdir ./.ct_results \
 	-cover ct/websocket_client.coverspec
+
+##
+## Testing
+##
+
+eunit: compile
+	./rebar eunit skip_deps=true suites=${SUITES}
+## Rename all tests in order to remove duplicated names (add _(++i) suffix to each test)
+	@for tout in `find test -name "TEST-*.xml"`; do awk '/testcase/{gsub("_[0-9]+\"", "_" ++i "\"")}1' $$tout > $$tout.tmp; mv $$tout.tmp $$tout; done

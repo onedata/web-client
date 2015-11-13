@@ -8,13 +8,59 @@
 %% @doc This is a HTTP client library, using hackney to perform requests.
 %% It is used to unify all HTTP calls across onedata.
 %%
-%% Options are passed directly to hackney. For possible options, see:
-%% https://github.com/benoitc/hackney/
+%% The API includes:
+%%      - some convenience functions (get/post/put/delete)
+%%      - the main, general function request/5 that automatically returns the
+%%          response body. Response format is {ok, Code, Headers, Body}
+%%      - request_return_stream/5 - function that allows streaming the
+%%          response body. Response format is {ok, StreamRef}.
+%%          See hackney docs for streaming instructions.
 %%
-%% To perform a https request without ceryfying the server cert, use
-%% 'insecure' option.
+%% Possible options:
 %%
-%% To pass ssl options to hackney, use the option {ssl_options, [<Options>]}.
+%% insecure - to perform a https request without verifying the server cert
+%%
+%% {ssl_options, [<Options>]} - to pass ssl options to ssl2
+%%
+%% {max_body, <ValueInt>} - specifying maximum body length that can be
+%%      automatically returned from request. In case of a large body,
+%%      function request_return_stream/5 can be used to stream the body.
+%%
+%% {stream_to, pid()} - (valid with request_return_stream/5)
+%%      the response messages will be sent to this PID.
+%%
+%% {cookie, list() | binary()} - to set a cookie or a list of cookies.
+%%
+%% {follow_redirect, boolean()}: false by default, follow redirections
+%%
+%% {max_redirect, integer()}: - 5 by default, the maximum number of 
+%%      redirections for a request
+%%
+%% {force_redirect, boolean()}: false by default, to force the redirection 
+%%      even on POST
+%%
+%% {connect_timeout, infinity | integer()}: timeout used when
+%%      estabilishing a connection, in milliseconds. Default is 8000.
+%%
+%% {recv_timeout, infinity | integer()}: timeout used when
+%%      receiving a connection. Default is 5000.only
+%%
+%% NOTE: If request_return_stream/5 is used, only the follow_redirect is taken
+%%      into consideration for the redirection. If a valid redirection happens,
+%%      the following is returned:
+%%          {see_other, To, Headers} - for status 303 POST requests
+%%          {redirect, To, Headers} - otherwise
+%%
+%% {proxy, proxy_options()}: to connect via a proxy
+%%
+%% proxy_options():
+%%      binary(): url to use for the proxy. Used for basic HTTP proxy
+%%      {Host::binary(), Port::binary}: Host and port to connect, for HTTP proxy
+%%      {socks5, Host::binary(), Port::binary()}: Host and Port to connect
+%%          to a socks5 proxy.
+%%      {connect, Host::binary(), Port::binary()}: Host and Port to connect to
+%%          an HTTP tunnel.
+%%      
 %% @end
 %% ===================================================================
 -module(http_client).
@@ -38,6 +84,9 @@ patch | purge. %% RFC-5789
 % Response code
 -type code() :: integer().
 
+% Maximum body length that will be returned from request
+-define(MAX_BODY_LENGTH, 1048576). % 1MB
+
 %% API - convenience functions
 -export([get/1, get/2, get/3, get/4]).
 -export([post/1, post/2, post/3, post/4]).
@@ -46,6 +95,8 @@ patch | purge. %% RFC-5789
 -export([request/1, request/2, request/3, request/4]).
 % Performs the request
 -export([request/5]).
+% Performs the request, but instead the body return the ref for streaming.
+-export([request_return_stream/5]).
 
 -export_type([method/0, url/0, headers/0, body/0, opts/0, code/0]).
 
@@ -288,19 +339,11 @@ request(Method, URL, Headers, Body) ->
     ReqBd :: body(), Options :: opts()) ->
     {ok, code(), headers(), body()} | {error, term()}.
 request(Method, URL, ReqHdrs, ReqBd, Options) ->
-    HcknURL0 = hackney_url:parse_url(URL),
-    {HcknURL, PreparedOpts} =
-        % In case of HTTPS request, use our SSL rather than erlang's
-    case HcknURL0#hackney_url.transport of
-        hackney_ssl_transport ->
-            HURL = HcknURL0#hackney_url{transport = hackney_ssl2_transport},
-            % Custom ssl opts
-            {HURL, prepare_ssl_opts(Options)};
-        _ ->
-            {HcknURL0, Options}
-    end,
-
-    case do_request(Method, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
+    % If max_body is specified in opts, don't modify it, else use default
+    MaxBd = proplists:get_value(max_body, Options, ?MAX_BODY_LENGTH),
+    % with_body option forces hackney to always return the body
+    Opts = [with_body, {max_body, MaxBd} | proplists:delete(max_body, Options)],
+    case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
         {ok, Code, RespHeaders, RespBody} ->
             {ok, Code, RespHeaders, RespBody};
         {error, closed} ->
@@ -311,7 +354,35 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
             % @todo maybe it is connected with using custom transport
             % @todo   and hackney calls some callback from default one
             % @todo maybe its ssl2 problem
-            do_request(Method, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
+            do_request(Method, URL, ReqHdrs, ReqBd, Opts);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Performs a HTTP request and returns a reference that can be used to
+%% stream the response body.
+%% @end
+%%--------------------------------------------------------------------
+-spec request_return_stream(Method :: method(), URL :: url(),
+    ReqHdrs :: headers(), ReqBd :: body(), Options :: opts()) ->
+    {ok, StrmRef :: term()} | {error, term()}.
+request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
+    Opts = [async | Options],
+    case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
+        {ok, SteamRef} ->
+            {ok, SteamRef};
+        {error, closed} ->
+            % Hackney uses socket pools, sometimes it grabs a
+            % disconnected socket and returns {error, closed}.
+            % Try again (once) if this happens.
+            % @todo check why and when this happens
+            % @todo maybe it is connected with using custom transport
+            % @todo   and hackney calls some callback from default one
+            % @todo maybe its ssl2 problem
+            do_request(Method, URL, ReqHdrs, ReqBd, Options);
         {error, Error} ->
             {error, Error}
     end.
@@ -328,48 +399,58 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
 %%--------------------------------------------------------------------
 -spec do_request(Method :: method(), HcknURL :: hackney_url(),
     ReqHdrs :: headers(), ReqBd :: body(), Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-do_request(Method, HcknURL, ReqHdrs, ReqBd, Options) ->
-    case hackney:request(Method, HcknURL, ReqHdrs, ReqBd, Options) of
-        {ok, Ref} ->
-            {ok, RespBody} = hackney:body(Ref),
-            {ok, Code, RespHeaders, RespBody};
-        {ok, Code, RespHeaders, Ref} ->
-            {ok, RespBody} = hackney:body(Ref),
-            {ok, Code, RespHeaders, RespBody};
-        {error, Error} ->
-            {error, Error}
-    end.
+    {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
+do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
+    HcknURL0 = hackney_url:parse_url(URL),
+    {HcknURL, PreparedOpts} =
+        case HcknURL0#hackney_url.transport of
+            hackney_ssl_transport ->
+                % Use ssl2 for HTTPS connections
+                {
+                    HcknURL0#hackney_url{transport = hackney_ssl2_transport},
+                    prepare_ssl_opts(Options)
+                };
+            _ ->
+                {
+                    HcknURL0,
+                    Options
+                }
+        end,
+    % Do the request and return the outcome
+    hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts).
 
 
 %%--------------------------------------------------------------------
 %% @doc
 %% Prepares options for hackney. Analyses ssl_options passed in Options list
-%% and merges them with hackney's default options. This is needed because
-%% hackney won't perform merge - if it finds ssl_options specified by
-%% user, it overrides its default options and cert
-%% verification is not performed.
+%% and transfors them in connect_opts, which will be fed to ssl2:connect.
 %% @end
 %%--------------------------------------------------------------------
 -spec prepare_ssl_opts(Options :: opts()) -> Options :: opts().
 prepare_ssl_opts(Options) ->
     SSLOpts = proplists:get_value(ssl_options, Options, []),
-    case proplists:get_value(insecure, Options, undefined) of
-        true ->
-            % Insecure option is present,
-            % don't add verify flag (don't modify SSL opts at all)
-            [{connect_options, SSLOpts} | proplists:delete(ssl_options, Options)];
-        undefined ->
-            % Insecure option is not present,
-            % add verify flag if it's not present yet
-            SSLOMerged =
-                case proplists:get_value(verify_type, SSLOpts, undefined) of
-                    undefined ->
-                        % Verify flag is not present, add it
-                        [{verify_type, verify_peer} | SSLOpts];
-                    _ ->
-                        % Verify flag is present, do not modify ssl opts
-                        SSLOpts
-                end,
-            [{connect_options, SSLOMerged} | proplists:delete(ssl_options, Options)]
-    end.
+    ConnectOpts =
+        case proplists:get_value(insecure, Options, undefined) of
+            true ->
+                % Insecure option is present,
+                % don't add verify flag (don't modify SSL opts at all)
+                SSLOpts;
+            undefined ->
+                % Insecure option is not present,
+                % add verify flag if it's not present yet
+                SSLOMerged =
+                    case proplists:get_value(verify_type, SSLOpts, undefined) of
+                        undefined ->
+                            % Verify flag is not present, add it
+                            [{verify_type, verify_peer} | SSLOpts];
+                        _ ->
+                            % Verify flag is present, do not modify ssl opts
+                            SSLOpts
+                    end,
+                SSLOMerged
+        end,
+    % Remove ssl_options from the proplist - no longer needed
+    NoSSLOpts = proplists:delete(ssl_options, Options),
+    % Remove insecure from the proplist - no longer needed
+    NoInsecureFlag = proplists:delete(insecure, NoSSLOpts),
+    [{connect_options, ConnectOpts} | NoInsecureFlag].
