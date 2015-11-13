@@ -58,10 +58,8 @@ init(_, _WSReq) ->
     {ok, #state{}}.
 
 websocket_handle(Frame, _, State = #state{waiting = undefined, buffer = Buffer}) ->
-    io:format("Client received frame~n"),
     {ok, State#state{buffer = [Frame|Buffer]}};
 websocket_handle(Frame, _, State = #state{waiting = From}) ->
-    io:format("Client received frame~n"),
     From ! Frame,
     {ok, State#state{waiting = undefined}}.
 
@@ -77,5 +75,4 @@ websocket_info(stop, _, State) ->
     {close, <<>>, State}.
 
 websocket_terminate(Close, _, State) ->
-    io:format("Websocket closed with frame ~p and state ~p", [Close, State]),
     ok.

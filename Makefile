@@ -30,20 +30,6 @@ plt:
 dialyzer: plt
 	dialyzer ./ebin --plt ${PLT} -Werror_handling -Wrace_conditions --fullpath
 
-
-test-deps:
-	@if [ ! -d "test-deps/cowboy" ]; then \
-		git clone -b websocket_payload_nif https://github.com/RoXeon/cowboy.git test-deps/cowboy; \
-	fi
-	@cd test-deps/cowboy && ../../rebar get-deps && ../../rebar compile
-
-ct: compile test-deps
-	mkdir -p .ct_results
-	ct_run -pa test-deps/cowboy/ebin test-deps/cowboy/deps/ranch/ebin test-deps/cowboy/deps/cowlib/ebin ebin \
-	-dir ct \
-	-logdir ./.ct_results \
-	-cover ct/websocket_client.coverspec
-
 ##
 ## Testing
 ##

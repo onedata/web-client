@@ -1,11 +1,22 @@
 .idea
+.git
+.settings
+.eunit
+.dialyzer.plt
+
 *.iml
 *.sublime*
 *.beam
-.dialyzer.plt
+*.pyc
+*.o
+
+test/eunit_results
+test_distributed/cover_tmp.spec
+test_coverage
 
 deps
+doc
+logs
 ebin
-test-deps
-.ct_results
-.eunit
+priv
+
