@@ -375,6 +375,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
         {ok, SteamRef} ->
             {ok, SteamRef};
+
         {error, closed} ->
             % Hackney uses socket pools, sometimes it grabs a
             % disconnected socket and returns {error, closed}.
@@ -398,7 +399,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
 %% Calls hackney to perform a HTTP request.
 %% @end
 %%--------------------------------------------------------------------
--spec do_request(Method :: method(), HcknURL :: hackney_url(),
+-spec do_request(Method :: method(), URL :: url(),
     ReqHdrs :: headers(), ReqBd :: body(), Options :: opts()) ->
     {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
 do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
