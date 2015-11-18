@@ -87,6 +87,9 @@ binary() |
 %% Host and Port to connect to
 {connect, Host :: binary(), Port :: binary()}.
 
+% Opts passed to hackney
+-type hackney_opts() :: [term()].
+
 % Maximum body length that will be returned from request
 -define(MAX_BODY_LENGTH, 1048576). % 1MB
 
@@ -101,7 +104,8 @@ binary() |
 % Performs the request, but instead the body return the ref for streaming.
 -export([request_return_stream/5]).
 
--export_type([method/0, url/0, headers/0, body/0, code/0, opts/0, opt/0, proxy_opt/0]).
+-export_type([method/0, url/0, headers/0, body/0, code/0,
+    opts/0, opt/0, proxy_opt/0]).
 
 
 %%%===================================================================
@@ -378,8 +382,8 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
         {ok, SteamRef} ->
             {ok, SteamRef};
-
         {error, closed} ->
+            io:format("~n~n ERROR CLOSED (STREAM)!! ~n~n"),
             % Hackney uses socket pools, sometimes it grabs a
             % disconnected socket and returns {error, closed}.
             % Try again (once) if this happens.
@@ -403,7 +407,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec do_request(Method :: method(), URL :: url(),
-    ReqHdrs :: headers(), ReqBd :: body(), Options :: opts()) ->
+    ReqHdrs :: headers(), ReqBd :: body(), Options :: hackney_opts()) ->
     {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
 do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
     HcknURL0 = hackney_url:parse_url(URL),
