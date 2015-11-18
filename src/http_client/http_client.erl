@@ -16,34 +16,7 @@
 %%          response body. Response format is {ok, StreamRef}.
 %%          See hackney docs for streaming instructions.
 %%
-%% Possible options:
-%%
-%% insecure - to perform a https request without verifying the server cert
-%%
-%% {ssl_options, [<Options>]} - to pass ssl options to ssl2
-%%
-%% {max_body, <ValueInt>} - specifying maximum body length that can be
-%%      automatically returned from request. In case of a large body,
-%%      function request_return_stream/5 can be used to stream the body.
-%%
-%% {stream_to, pid()} - (valid with request_return_stream/5)
-%%      the response messages will be sent to this PID.
-%%
-%% {cookie, list() | binary()} - to set a cookie or a list of cookies.
-%%
-%% {follow_redirect, boolean()}: false by default, follow redirections
-%%
-%% {max_redirect, integer()}: - 5 by default, the maximum number of 
-%%      redirections for a request
-%%
-%% {force_redirect, boolean()}: false by default, to force the redirection 
-%%      even on POST
-%%
-%% {connect_timeout, infinity | integer()}: timeout used when
-%%      estabilishing a connection, in milliseconds. Default is 8000.
-%%
-%% {recv_timeout, infinity | integer()}: timeout used when
-%%      receiving a connection. Default is 5000.only
+%% Possible options: see opts/0 type
 %%
 %% NOTE: If request_return_stream/5 is used, only the follow_redirect is taken
 %%      into consideration for the redirection. If a valid redirection happens,
@@ -51,16 +24,7 @@
 %%          {see_other, To, Headers} - for status 303 POST requests
 %%          {redirect, To, Headers} - otherwise
 %%
-%% {proxy, proxy_options()}: to connect via a proxy
 %%
-%% proxy_options():
-%%      binary(): url to use for the proxy. Used for basic HTTP proxy
-%%      {Host::binary(), Port::binary}: Host and port to connect, for HTTP proxy
-%%      {socks5, Host::binary(), Port::binary()}: Host and Port to connect
-%%          to a socks5 proxy.
-%%      {connect, Host::binary(), Port::binary()}: Host and Port to connect to
-%%          an HTTP tunnel.
-%%      
 %% @end
 %% ===================================================================
 -module(http_client).
@@ -79,10 +43,49 @@ patch | purge. %% RFC-5789
 -type headers() :: [{Key :: string() | binary(), Value :: string() | binary()}].
 % Request / response body
 -type body() :: string() | binary().
-% Request options
--type opts() :: [term()].
 % Response code
 -type code() :: integer().
+% Request options
+-type opts() :: [opt()].
+
+% All possible request options
+-type opt() ::
+%% to perform a https request without verifying the server cert
+insecure |
+%% to pass ssl options to ssl2
+{ssl_options, [term()]} |
+%% specifying maximum body length that can be automatically returned
+%% from request. In case of a large body, function request_return_stream/5
+%% can be used to stream the body.
+{max_body, integer()} |
+%% the response messages will be sent to this PID
+%% (valid with request_return_stream/5)
+{stream_to, pid()} |
+%% to set a cookie or a list of cookies.
+{cookie, binary() | [binary()]} |
+%% false by default, automatically follow redirections
+{follow_redirect, boolean()} |
+%% 5 by default, the maximum number of redirections for a request
+{max_redirect, integer()} |
+%% false by default, to force the redirection even on POST
+{force_redirect, boolean()} |
+%% timeout used when estabilishing a connection, in milliseconds. Default: 8000.
+{connect_timeout, infinity | integer()}|
+%% timeout used when receiving a connection. Default: 5000.
+{recv_timeout, infinity | integer()}|
+%% to connect via a proxy
+{proxy, proxy_opt()}.
+
+% Proxy options (one of them can be used)
+-type proxy_opt() ::
+%% URL to use for the proxy. Used for basic HTTP proxy
+binary() |
+%% Host and port to connect, for HTTP proxy
+{Host :: binary(), Port :: binary} |
+%% Host and Port to connect
+{socks5, Host :: binary(), Port :: binary()} |
+%% Host and Port to connect to
+{connect, Host :: binary(), Port :: binary()}.
 
 % Maximum body length that will be returned from request
 -define(MAX_BODY_LENGTH, 1048576). % 1MB
@@ -98,7 +101,7 @@ patch | purge. %% RFC-5789
 % Performs the request, but instead the body return the ref for streaming.
 -export([request_return_stream/5]).
 
--export_type([method/0, url/0, headers/0, body/0, opts/0, code/0]).
+-export_type([method/0, url/0, headers/0, body/0, code/0, opts/0, opt/0, proxy_opt/0]).
 
 
 %%%===================================================================
