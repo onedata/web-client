@@ -380,7 +380,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     ReqHdrs :: headers(), ReqBd :: body(), Options :: hackney_opts()) ->
     {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
 do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
-    HcknURL0 = hackney_url:parse_url(URL),
+    HcknURL0 = hackney_url:normalize(hackney_url:parse_url(URL)),
     {HcknURL, PreparedOpts} =
         case HcknURL0#hackney_url.transport of
             hackney_ssl_transport ->
