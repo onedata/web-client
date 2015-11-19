@@ -380,7 +380,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     ReqHdrs :: headers(), ReqBd :: body(), Options :: hackney_opts()) ->
     {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
 do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
-    HcknURL0 = hackney_url:normalize(hackney_url:parse_url(URL)),
+    HcknURL0 = hackney_url:parse_url(URL),
     {HcknURL, PreparedOpts} =
         case HcknURL0#hackney_url.transport of
             hackney_ssl_transport ->
@@ -396,28 +396,20 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
                 }
         end,
     % Do the request and return the outcome
-    {ok, ConnRef} = hackney:connect(HcknURL, PreparedOpts),
-    {ok, Code, RespHeaders, ConnRef} = hackney:send_request(ConnRef, {
-        Mthd, URL, ReqHdrs, ReqBd
-    }),
-    {ok, RespBody} = hackney:body(ConnRef),
-    ok = hackney:close(ConnRef),
-    {ok, Code, RespHeaders, RespBody}.
-
-%%     case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
-%%         {error, closed} ->
-%%             io:format("HTTP request returned {error, closed}, retrying.~n"),
-%%             % Hackney uses socket pools, sometimes it grabs a
-%%             % disconnected socket and returns {error, closed}.
-%%             % Try again (once) if this happens.
-%%             % @todo check why and when this happens
-%%             % @todo maybe it is connected with using custom transport
-%%             % @todo   and hackney calls some callback from default one
-%%             % @todo maybe its ssl2 problem
-%%             hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
-%%         Result ->
-%%             Result
-%%     end.
+    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
+        {error, closed} ->
+            io:format("HTTP request returned {error, closed}, retrying.~n"),
+            % Hackney uses socket pools, sometimes it grabs a
+            % disconnected socket and returns {error, closed}.
+            % Try again (once) if this happens.
+            % @todo check why and when this happens
+            % @todo maybe it is connected with using custom transport
+            % @todo   and hackney calls some callback from default one
+            % @todo maybe its ssl2 problem
+            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
+        Result ->
+            Result
+    end.
 
 
 %%--------------------------------------------------------------------
