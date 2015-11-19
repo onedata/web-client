@@ -396,20 +396,28 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
                 }
         end,
     % Do the request and return the outcome
-    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
-        {error, closed} ->
-            io:format("HTTP request returned {error, closed}, retrying.~n"),
-            % Hackney uses socket pools, sometimes it grabs a
-            % disconnected socket and returns {error, closed}.
-            % Try again (once) if this happens.
-            % @todo check why and when this happens
-            % @todo maybe it is connected with using custom transport
-            % @todo   and hackney calls some callback from default one
-            % @todo maybe its ssl2 problem
-            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
-        Result ->
-            Result
-    end.
+    {ok, ConnRef} = hackney:connect(HcknURL, PreparedOpts),
+    {ok, Code, RespHeaders, ConnRef} = hackney:send_request(ConnRef, {
+        Mthd, URL, ReqHdrs, ReqBd
+    }),
+    {ok, RespBody} = hackney:body(ConnRef),
+    ok = hackney:close(ConnRef),
+    {ok, Code, RespHeaders, RespBody}.
+
+%%     case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
+%%         {error, closed} ->
+%%             io:format("HTTP request returned {error, closed}, retrying.~n"),
+%%             % Hackney uses socket pools, sometimes it grabs a
+%%             % disconnected socket and returns {error, closed}.
+%%             % Try again (once) if this happens.
+%%             % @todo check why and when this happens
+%%             % @todo maybe it is connected with using custom transport
+%%             % @todo   and hackney calls some callback from default one
+%%             % @todo maybe its ssl2 problem
+%%             hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
+%%         Result ->
+%%             Result
+%%     end.
 
 
 %%--------------------------------------------------------------------
