@@ -5,7 +5,8 @@
 %% cited in 'LICENSE.txt'.
 %% @end
 %% ===================================================================
-%% @doc This file contains useful functions in
+%% @doc This file contains useful functions concerning
+%% both http and websocket clients.
 %% @end
 %% ===================================================================
 -module(web_client_utils).
@@ -21,7 +22,7 @@
 %%--------------------------------------------------------------------
 %% @doc
 %% Informs where CA bundle is expected to be found. It is required
-%% for server cert verification
+%% for server cert verification.
 %% @end
 %%--------------------------------------------------------------------
 ca_bundle_location() ->

@@ -70,9 +70,9 @@ insecure |
 %% false by default, to force the redirection even on POST
 {force_redirect, boolean()} |
 %% timeout used when estabilishing a connection, in milliseconds. Default: 8000.
-{connect_timeout, infinity | integer()}|
+{connect_timeout, infinity | integer()} |
 %% timeout used when receiving a connection. Default: 5000.
-{recv_timeout, infinity | integer()}|
+{recv_timeout, infinity | integer()} |
 %% to connect via a proxy
 {proxy, proxy_opt()}.
 
@@ -350,22 +350,7 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
     MaxBd = proplists:get_value(max_body, Options, ?MAX_BODY_LENGTH),
     % with_body option forces hackney to always return the body
     Opts = [with_body, {max_body, MaxBd} | proplists:delete(max_body, Options)],
-    case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
-        {ok, Code, RespHeaders, RespBody} ->
-            {ok, Code, RespHeaders, RespBody};
-        {error, closed} ->
-            io:format("~n~n ERROR CLOSED!! ~n~n"),
-            % Hackney uses socket pools, sometimes it grabs a
-            % disconnected socket and returns {error, closed}.
-            % Try again (once) if this happens.
-            % @todo check why and when this happens
-            % @todo maybe it is connected with using custom transport
-            % @todo   and hackney calls some callback from default one
-            % @todo maybe its ssl2 problem
-            do_request(Method, URL, ReqHdrs, ReqBd, Opts);
-        {error, Error} ->
-            {error, Error}
-    end.
+    do_request(Method, URL, ReqHdrs, ReqBd, Opts).
 
 
 %%--------------------------------------------------------------------
@@ -379,22 +364,7 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
     {ok, StrmRef :: term()} | {error, term()}.
 request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     Opts = [async | Options],
-    case do_request(Method, URL, ReqHdrs, ReqBd, Opts) of
-        {ok, SteamRef} ->
-            {ok, SteamRef};
-        {error, closed} ->
-            io:format("~n~n ERROR CLOSED (STREAM)!! ~n~n"),
-            % Hackney uses socket pools, sometimes it grabs a
-            % disconnected socket and returns {error, closed}.
-            % Try again (once) if this happens.
-            % @todo check why and when this happens
-            % @todo maybe it is connected with using custom transport
-            % @todo   and hackney calls some callback from default one
-            % @todo maybe its ssl2 problem
-            do_request(Method, URL, ReqHdrs, ReqBd, Options);
-        {error, Error} ->
-            {error, Error}
-    end.
+    do_request(Method, URL, ReqHdrs, ReqBd, Opts).
 
 
 %% ====================================================================
@@ -426,7 +396,20 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
                 }
         end,
     % Do the request and return the outcome
-    hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts).
+    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
+        {error, closed} ->
+            io:format("HTTP request returned {error, closed}, retrying.~n"),
+            % Hackney uses socket pools, sometimes it grabs a
+            % disconnected socket and returns {error, closed}.
+            % Try again (once) if this happens.
+            % @todo check why and when this happens
+            % @todo maybe it is connected with using custom transport
+            % @todo   and hackney calls some callback from default one
+            % @todo maybe its ssl2 problem
+            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
+        Result ->
+            Result
+    end.
 
 
 %%--------------------------------------------------------------------
