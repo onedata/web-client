@@ -1,3 +1,5 @@
+BASE_DIR = $(shell pwd)
+
 .PHONY: all deps test test-deps clean
 
 all: deps compile
