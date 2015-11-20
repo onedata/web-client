@@ -16,7 +16,6 @@ test_coverage
 
 deps
 doc
-logs
 ebin
 priv
 
