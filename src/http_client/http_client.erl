@@ -54,6 +54,9 @@ patch | purge. %% RFC-5789
 insecure |
 %% to pass ssl options to ssl2
 {ssl_options, [term()]} |
+%% Hackney usees pools of keep-alive connections. This options allows to
+%% choose which pool will be used.
+{pool, term()} |
 %% specifying maximum body length that can be automatically returned
 %% from request. In case of a large body, function request_return_stream/5
 %% can be used to stream the body.
