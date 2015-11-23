@@ -32,11 +32,12 @@
 %%--------------------------------------------------------------------
 %% @doc
 %% Atoms used to identify messages in {active, once | true} mode.
+%% Returns atom recognizable by hackney.
 %% @end
 %%--------------------------------------------------------------------
--spec messages(term()) -> {ssl2, ssl2_closed, ssl2_error}.
+-spec messages(term()) -> {ssl, ssl_closed, ssl_error}.
 messages(_) ->
-    {ssl2, ssl2_closed, ssl2_error}.
+    {ssl, ssl_closed, ssl_error}.
 
 
 %%--------------------------------------------------------------------
