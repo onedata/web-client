@@ -61,7 +61,8 @@ api_t() ->
         [HTTP_URL, Headers, Body],
         [get, Parsed_HTTP_URL, Headers, Body, [
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -71,7 +72,8 @@ api_t() ->
         [HTTP_URL],
         [delete, Parsed_HTTP_URL, [], <<>>, [
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -83,7 +85,8 @@ api_t() ->
         ]],
         [get, Parsed_HTTP_URL, Headers, Body, [
             with_body,
-            {max_body, 12123}
+            {max_body, 12123},
+            {pool, false}
         ]]
     },
 
@@ -94,7 +97,8 @@ api_t() ->
         [post, Parsed_HTTPS_URL, Headers, <<>>, [
             {connect_options, [{verify_type, verify_peer}]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -115,7 +119,8 @@ api_t() ->
                 {certfile, "b"}
             ]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -136,7 +141,8 @@ api_t() ->
                 {certfile, "b"}
             ]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -147,7 +153,8 @@ api_t() ->
         [post, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, []},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH}
+            {max_body, ?MAX_BODY_LENGTH},
+            {pool, false}
         ]]
     },
 
@@ -162,7 +169,8 @@ api_t() ->
         [get, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, [{keyfile, "a"}, {certfile, "b"}]},
             with_body,
-            {max_body, 987665}
+            {max_body, 987665},
+            {pool, false}
         ]]
     },
 
@@ -203,14 +211,15 @@ request_return_stream_t() ->
     Test1 = {
         [post, HTTP_URL, Headers, Body, []],
         [post, Parsed_HTTP_URL, Headers, Body, [
-            async
+            async,
+            {pool, false}
         ]]
     },
 
     % 2. test: HTTP request
     Test2 = {
         [delete, HTTP_URL, Headers, Body, [option]],
-        [delete, Parsed_HTTP_URL, Headers, Body, [async, option]]
+        [delete, Parsed_HTTP_URL, Headers, Body, [async, option, {pool, false}]]
     },
 
     % 3. test: HTTPS request
@@ -219,7 +228,8 @@ request_return_stream_t() ->
         [get, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, [{verify_type, verify_peer}]},
             async,
-            option
+            option,
+            {pool, false}
         ]]
     },
 
@@ -238,7 +248,8 @@ request_return_stream_t() ->
                 {keyfile, "a"},
                 {certfile, "b"}
             ]},
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -257,7 +268,8 @@ request_return_stream_t() ->
                 {keyfile, "a"},
                 {certfile, "b"}
             ]},
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -266,7 +278,8 @@ request_return_stream_t() ->
         [post, HTTPS_URL, Headers, Body, [insecure]],
         [post, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, []},
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -278,7 +291,8 @@ request_return_stream_t() ->
         ]],
         [delete, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, [{keyfile, "a"}, {certfile, "b"}]},
-            async
+            async,
+            {pool, false}
         ]]
     },
 

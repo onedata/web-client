@@ -54,9 +54,6 @@ patch | purge. %% RFC-5789
 insecure |
 %% to pass ssl options to ssl2
 {ssl_options, [term()]} |
-%% Hackney usees pools of keep-alive connections. This options allows to
-%% choose which pool will be used.
-{pool, term()} |
 %% specifying maximum body length that can be automatically returned
 %% from request. In case of a large body, function request_return_stream/5
 %% can be used to stream the body.
@@ -384,7 +381,7 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
     {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
 do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
     HcknURL0 = hackney_url:parse_url(URL),
-    {HcknURL, PreparedOpts} =
+    {HcknURL, Opts} =
         case HcknURL0#hackney_url.transport of
             hackney_ssl_transport ->
                 % Use ssl2 for HTTPS connections
@@ -398,18 +395,19 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
                     Options
                 }
         end,
-    % Do the request and return the outcome
-    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts) of
+    % Do not use hackney pools = new connection every request.
+    % When hackney uses socket pools, sometimes it grabs a
+    % disconnected socket and returns {error, closed}.
+    % Sometimes, ssl2 returns {error, 'UNEXPECTED_RECORD'}.
+    % @todo check why and when this happens
+    % @todo maybe it is connected with using custom transport
+    % @todo   and hackney calls some callback from default one
+    % @todo maybe its ssl2 problem
+    OptsWithPool = [{pool, false} | Opts],
+    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, OptsWithPool) of
         {error, closed} ->
-            io:format("HTTP request returned {error, closed}, retrying.~n"),
-            % Hackney uses socket pools, sometimes it grabs a
-            % disconnected socket and returns {error, closed}.
-            % Try again (once) if this happens.
-            % @todo check why and when this happens
-            % @todo maybe it is connected with using custom transport
-            % @todo   and hackney calls some callback from default one
-            % @todo maybe its ssl2 problem
-            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, PreparedOpts);
+            % If {error, closed} appears, retry once.
+            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, Opts);
         Result ->
             Result
     end.
