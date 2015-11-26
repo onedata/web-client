@@ -12,7 +12,7 @@
 
 start_link() ->
     crypto:start(),
-    ssl:start(),
+    application:start(ssl2),
     websocket_client:start_link("wss://echo.websocket.org", ?MODULE, []).
 
 init([], _ConnState) ->
