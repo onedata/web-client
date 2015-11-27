@@ -34,28 +34,44 @@
 %% ===================================================================
 -module(websocket_client_handler_behaviour).
 
--type state() :: any().
--type keepalive() :: integer().
--type close_type() :: normal | error | remote.
+%%--------------------------------------------------------------------
+%% @doc
+%% Callback called when connection is received.
+%% @end
+%%--------------------------------------------------------------------
+-callback init([term()], websocket_req:req()) ->
+    {ok, State :: term()} | {ok, State :: term(), Keepalive :: integer()}.
 
--callback init(list(), websocket_req:req()) ->
-    {ok, state()} |
-    {ok, state(), keepalive()}.
 
--callback websocket_handle(
-    {text | binary | ping | pong, binary()},
-    websocket_req:req(),
-    state()) ->
-    {ok, state()} |
-    {reply, websocket_req:frame(), state()} |
-    {close, binary(), state()}.
+%%--------------------------------------------------------------------
+%% @doc
+%% Callback called when data is received via WebSocket protocol.
+%% @end
+%%--------------------------------------------------------------------
+-callback websocket_handle({text | binary | ping | pong, binary()},
+    websocket_req:req(), State :: term()) ->
+    {ok, State :: term()} |
+    {reply, websocket_req:frame(), State :: term()} |
+    {close, Reply :: binary(), State :: term()}.
 
--callback websocket_info(any(), websocket_req:req(), state()) ->
-    {ok, state()}
-    | {reply, websocket_req:frame(), state()}
-    | {close, binary(), state()}.
 
--callback websocket_terminate(
-    {close_type(), term()} | {close_type(), integer(), binary()},
-    websocket_req:req(),
-    state()) -> ok.
+%%--------------------------------------------------------------------
+%% @doc
+%% Callback called when a message is sent to the process handling
+%% the connection.
+%% @end
+%%--------------------------------------------------------------------
+-callback websocket_info(term(), websocket_req:req(), State :: term()) ->
+    {ok, State :: term()} |
+    {reply, websocket_req:frame(), State :: term()} |
+    {close, Reply :: binary(), State :: term()}.
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Callback called when the connection is closed.
+%% @end
+%%--------------------------------------------------------------------
+-callback websocket_terminate({Reason, term()} | {Reason, integer(), binary()},
+    websocket_req:req(), State :: term()) -> ok when
+    Reason :: normal | error | remote.

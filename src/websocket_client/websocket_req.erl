@@ -36,22 +36,22 @@
 -module(websocket_req).
 
 -record(websocket_req, {
-          protocol                        :: protocol(),
-          host                            :: string(),
-          port                            :: inet:port_number(),
-          path                            :: string(),
-          keepalive = infinity            :: infinity | integer(),
-          keepalive_timer = undefined     :: undefined | reference(),
-          socket                          :: inet:socket() | ssl2:socket(),
-          transport                       :: module(),
-          handler                         :: module(),
-          key                             :: binary(),
-          remaining = undefined           :: undefined | integer(),
-          fin = undefined                 :: undefined | fin(),
-          opcode = undefined              :: undefined | opcode(),
-          continuation = undefined        :: undefined | binary(),
-          continuation_opcode = undefined :: undefined | opcode()
-         }).
+    protocol :: protocol(),
+    host :: string(),
+    port :: inet:port_number(),
+    path :: string(),
+    keepalive = infinity :: infinity | integer(),
+    keepalive_timer = undefined :: undefined | reference(),
+    socket :: inet:socket() | ssl2:socket(),
+    transport :: module(),
+    handler :: module(),
+    key :: binary(),
+    remaining = undefined :: undefined | integer(),
+    fin = undefined :: undefined | fin(),
+    opcode = undefined :: undefined | opcode(),
+    continuation = undefined :: undefined | binary(),
+    continuation_opcode = undefined :: undefined | opcode()
+}).
 
 -opaque req() :: #websocket_req{}.
 -export_type([req/0]).
@@ -59,8 +59,8 @@
 -type protocol() :: ws | wss.
 
 -type frame() :: close | ping | pong
-               | {text | binary | close | ping | pong, binary()}
-               | {close, 1000..4999, binary()}.
+| {text | binary | close | ping | pong, binary()}
+| {close, 1000..4999, binary()}.
 
 -type opcode() :: 0 | 1 | 2 | 8 | 9 | 10.
 -export_type([protocol/0, opcode/0, frame/0]).
@@ -69,41 +69,41 @@
 -export_type([fin/0]).
 
 -export([new/8,
-         protocol/2, protocol/1,
-         host/2, host/1,
-         port/2, port/1,
-         path/2, path/1,
-         keepalive/2, keepalive/1,
-         socket/2, socket/1,
-         transport/2, transport/1,
-         handler/2, handler/1,
-         key/2, key/1,
-         remaining/2, remaining/1,
-         fin/2, fin/1,
-         opcode/2, opcode/1,
-         continuation/2, continuation/1,
-         continuation_opcode/2, continuation_opcode/1,
-         get/2, set/2
-        ]).
+    protocol/2, protocol/1,
+    host/2, host/1,
+    port/2, port/1,
+    path/2, path/1,
+    keepalive/2, keepalive/1,
+    socket/2, socket/1,
+    transport/2, transport/1,
+    handler/2, handler/1,
+    key/2, key/1,
+    remaining/2, remaining/1,
+    fin/2, fin/1,
+    opcode/2, opcode/1,
+    continuation/2, continuation/1,
+    continuation_opcode/2, continuation_opcode/1,
+    get/2, set/2
+]).
 
 -export([
-         opcode_to_name/1,
-         name_to_opcode/1
-        ]).
+    opcode_to_name/1,
+    name_to_opcode/1
+]).
 
 -spec new(protocol(), string(), inet:port_number(),
-          string(), inet:socket() | ssl2:socket(),
-          module(), module(), binary()) -> req().
+    string(), inet:socket() | ssl2:socket(),
+    module(), module(), binary()) -> req().
 new(Protocol, Host, Port, Path, Socket, Transport, Handler, Key) ->
     #websocket_req{
-     protocol = Protocol,
-     host = Host,
-     port = Port,
-     path = Path,
-     socket = Socket,
-     transport = Transport,
-     handler = Handler,
-     key = Key
+        protocol = Protocol,
+        host = Host,
+        port = Port,
+        path = Path,
+        socket = Socket,
+        transport = Transport,
+        handler = Handler,
+        key = Key
     }.
 
 
@@ -259,20 +259,28 @@ g(continuation, #websocket_req{continuation = Ret}) -> Ret;
 g(continuation_opcode, #websocket_req{continuation_opcode = Ret}) -> Ret.
 
 
--spec set([{atom(), any()}], Req) -> Req when Req::req().
-set([{protocol, Val} | Tail], Req) -> set(Tail, Req#websocket_req{protocol = Val});
+-spec set([{atom(), any()}], Req) -> Req when Req :: req().
+set([{protocol, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{protocol = Val});
 set([{host, Val} | Tail], Req) -> set(Tail, Req#websocket_req{host = Val});
 set([{port, Val} | Tail], Req) -> set(Tail, Req#websocket_req{port = Val});
 set([{path, Val} | Tail], Req) -> set(Tail, Req#websocket_req{path = Val});
-set([{keepalive, Val} | Tail], Req) -> set(Tail, Req#websocket_req{keepalive = Val});
-set([{keepalive_timer, Val} | Tail], Req) -> set(Tail, Req#websocket_req{keepalive_timer = Val});
+set([{keepalive, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{keepalive = Val});
+set([{keepalive_timer, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{keepalive_timer = Val});
 set([{socket, Val} | Tail], Req) -> set(Tail, Req#websocket_req{socket = Val});
-set([{transport, Val} | Tail], Req) -> set(Tail, Req#websocket_req{transport = Val});
-set([{handler, Val} | Tail], Req) -> set(Tail, Req#websocket_req{handler = Val});
+set([{transport, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{transport = Val});
+set([{handler, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{handler = Val});
 set([{key, Val} | Tail], Req) -> set(Tail, Req#websocket_req{key = Val});
-set([{remaining, Val} | Tail], Req) -> set(Tail, Req#websocket_req{remaining = Val});
+set([{remaining, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{remaining = Val});
 set([{fin, Val} | Tail], Req) -> set(Tail, Req#websocket_req{fin = Val});
 set([{opcode, Val} | Tail], Req) -> set(Tail, Req#websocket_req{opcode = Val});
-set([{continuation, Val} | Tail], Req) -> set(Tail, Req#websocket_req{continuation = Val});
-set([{continuation_opcode, Val} | Tail], Req) -> set(Tail, Req#websocket_req{continuation_opcode = Val});
+set([{continuation, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{continuation = Val});
+set([{continuation_opcode, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{continuation_opcode = Val});
 set([], Req) -> Req.

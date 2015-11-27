@@ -25,5 +25,6 @@
 %% for server cert verification.
 %% @end
 %%--------------------------------------------------------------------
+-spec ca_bundle_location() -> string().
 ca_bundle_location() ->
     "/etc/ssl/cert.pem".
