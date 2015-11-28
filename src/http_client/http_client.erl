@@ -54,8 +54,9 @@ patch | purge. %% RFC-5789
 insecure |
 %% to pass ssl options to ssl2
 {ssl_options, [term()]} |
-%% specifying maximum body length that can be automatically returned
-%% from request. In case of a large body, function request_return_stream/5
+%% Specifying maximum body length that can be automatically returned
+%% from request. By default, whole body is returned regardless of its size.
+%% NOTE: in case of a large body, function request_return_stream/5
 %% can be used to stream the body.
 {max_body, integer()} |
 %% the response messages will be sent to this PID
@@ -89,9 +90,6 @@ binary() |
 
 % Opts passed to hackney
 -type hackney_opts() :: [term()].
-
-% Maximum body length that will be returned from request
--define(MAX_BODY_LENGTH, 1048576). % 1MB
 
 %% API - convenience functions
 -export([get/1, get/2, get/3, get/4]).
@@ -346,8 +344,10 @@ request(Method, URL, Headers, Body) ->
     ReqBd :: body(), Options :: opts()) ->
     {ok, code(), headers(), body()} | {error, term()}.
 request(Method, URL, ReqHdrs, ReqBd, Options) ->
-    % If max_body is specified in opts, don't modify it, else use default
-    MaxBd = proplists:get_value(max_body, Options, ?MAX_BODY_LENGTH),
+    % If max_body is specified in opts, accept the option, else use 'undefined'
+    % which will cause the function to return all the body regardless of
+    % its length.
+    MaxBd = proplists:get_value(max_body, Options, undefined),
     % with_body option forces hackney to always return the body
     Opts = [with_body, {max_body, MaxBd} | proplists:delete(max_body, Options)],
     do_request(Method, URL, ReqHdrs, ReqBd, Opts).
