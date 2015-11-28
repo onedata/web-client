@@ -1,3 +1,32 @@
+%% Copyright (C) 2012-2013 Jeremy Ong
+%%
+%% Permission is hereby granted, free of charge, to any person obtaining a copy
+%% of this software and associated documentation files (the "Software"), to deal
+%% in the Software without restriction, including without limitation the rights
+%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the Software is
+%% furnished to do so, subject to the following conditions:
+%%
+%% The above copyright notice and this permission notice shall be included in
+%% all copies or substantial portions of the Software.
+%%
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+%% OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+%% ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+%% OTHER DEALINGS IN THE SOFTWARE.
+%%
+%% https://github.com/jeremyong/websocket_client/
+%%
+%% ===================================================================
+%% @doc: This SUITE tests the abilities of websocket_client to:
+%%      - connect to a webscoket server
+%%      - send data
+%%      - receive data
+%% @end
+%% ===================================================================
 -module(wc_SUITE).
 
 -include_lib("common_test/include/ct.hrl").
@@ -14,6 +43,7 @@
     test_quick_response/1
 ]).
 
+
 all() -> [
     test_text_frames,
     test_binary_frames,
@@ -21,17 +51,34 @@ all() -> [
     test_quick_response
 ].
 
+
+%%%===================================================================
+%%% Setup and teardown functions
+%%%===================================================================
+
+% Starts required deps and an echo server written in cowboy.
 init_per_suite(Config) ->
-    application:start(sasl),
     crypto:start(),
     application:start(ranch),
     application:start(cowboy),
     ok = echo_server:start(),
     Config.
 
+
+% Cleanup
 end_per_suite(Config) ->
+    application:stop(cowboy),
+    application:stop(ranch),
+    crypto:stop(),
     Config.
 
+
+%%%===================================================================
+%%% Test functions
+%%%===================================================================
+
+% Tests if sending text messages to echo server results in receiving the same
+% messages.
 test_text_frames(_) ->
     {ok, Pid} = ws_client:start_link(),
     %% Short message
@@ -54,6 +101,9 @@ test_text_frames(_) ->
     ws_client:stop(Pid),
     ok.
 
+
+% Tests if sending binary frames to echo server results in receiving the same
+% messages.
 test_binary_frames(_) ->
     {ok, Pid} = ws_client:start_link(),
     %% Short message
@@ -71,6 +121,9 @@ test_binary_frames(_) ->
     ws_client:stop(Pid),
     ok.
 
+
+% Tests if sending control messages (ping-pong) to echo server results
+% in receiving control responses.
 test_control_frames(_) ->
     {ok, Pid} = ws_client:start_link(),
     %% Send ping with short message
@@ -86,6 +139,9 @@ test_control_frames(_) ->
     ws_client:stop(Pid),
     ok.
 
+
+% Tests if the client properly receives the first frame sent by the server
+% right after connecting.
 test_quick_response(_) ->
     %% Connect to the server and...
     {ok, Pid} = ws_client:start_link("ws://localhost:8080/hello/?q=world!"),
@@ -98,6 +154,12 @@ test_quick_response(_) ->
     ws_client:stop(Pid2),
     ok.
 
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+% Construction of messages of different lengths for tests.
 short_msg() ->
     <<"hello">>.
 medium_msg() ->
