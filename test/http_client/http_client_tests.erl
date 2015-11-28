@@ -15,10 +15,6 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("hackney/include/hackney_lib.hrl").
 
-% COPIED FROM http_client.erl
-% Maximum body length that will be returned from request
--define(MAX_BODY_LENGTH, 1048576). % 1MB
-
 main_test_() ->
     {setup,
         % Setup
@@ -61,7 +57,7 @@ api_t() ->
         [HTTP_URL, Headers, Body],
         [get, Parsed_HTTP_URL, Headers, Body, [
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
@@ -72,7 +68,7 @@ api_t() ->
         [HTTP_URL],
         [delete, Parsed_HTTP_URL, [], <<>>, [
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
@@ -97,7 +93,7 @@ api_t() ->
         [post, Parsed_HTTPS_URL, Headers, <<>>, [
             {connect_options, [{verify_type, verify_peer}]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
@@ -119,7 +115,7 @@ api_t() ->
                 {certfile, "b"}
             ]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
@@ -141,7 +137,7 @@ api_t() ->
                 {certfile, "b"}
             ]},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
@@ -153,7 +149,7 @@ api_t() ->
         [post, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, []},
             with_body,
-            {max_body, ?MAX_BODY_LENGTH},
+            {max_body, undefined},
             {pool, false}
         ]]
     },
