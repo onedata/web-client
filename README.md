@@ -2,9 +2,9 @@ About
 =====
 *web-client* is library application that contains:
 
-* HTTP and HTTPS client in Erlang 
+* HTTP and HTTPS client in Erlang - 
     a wrapper on *hackney* application: https://github.com/benoitc/hackney
-* WebSocket client in Erlang
+* WebSocket client in Erlang - 
     a fork of: https://github.com/jeremyong/websocket_client
 
 
@@ -22,5 +22,4 @@ Including *web-client* in a project will cause it to automatically include follo
 
 Support
 -----
-
 For more information visit project Confluence or write to wrzeszcz@agh.edu.pl.
