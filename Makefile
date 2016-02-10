@@ -1,4 +1,6 @@
 BASE_DIR = $(shell pwd)
+GIT_URL := $(shell git config --get remote.origin.url | sed -e 's/\(\/[^/]*\)$$//g')
+export GIT_URL
 
 .PHONY: all deps eunit clean
 
