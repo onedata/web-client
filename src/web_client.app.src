@@ -1,0 +1,13 @@
+{application, web_client,
+    [
+        {description, "Erlang HTTP and WebSocket client"},
+        {vsn, "1.0.1"},
+        {registered, []},
+        {applications, [
+            ssl2,
+            hackney,
+            crypto
+        ]},
+        {env, []}
+    ]
+}.

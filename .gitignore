@@ -1,1 +1,22 @@
-# Created by .ignore support plugin (hsz.mobi)
+.idea
+.git
+.settings
+.eunit
+.dialyzer.plt
+
+*.iml
+*.sublime*
+*.beam
+*.pyc
+*.o
+
+test/eunit_results
+test_distributed/cover_tmp.spec
+test_distributed/logs/*
+test_coverage
+
+deps
+doc
+ebin
+priv
+
