@@ -58,7 +58,9 @@ api_t() ->
         [get, Parsed_HTTP_URL, Headers, Body, [
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
@@ -69,7 +71,9 @@ api_t() ->
         [delete, Parsed_HTTP_URL, [], <<>>, [
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
@@ -82,24 +86,61 @@ api_t() ->
         [get, Parsed_HTTP_URL, Headers, Body, [
             with_body,
             {max_body, 12123},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
-    % 4. test: HTTPS request
+    % 4. test: HTTP request with timeouts as env
     Test4 = {
+        get,
+        [HTTP_URL, Headers, Body],
+        [get, Parsed_HTTP_URL, Headers, Body, [
+            with_body,
+            {max_body, undefined},
+            {pool, false},
+            {connect_timeout,10000},
+            {recv_timeout,15000}
+        ]],
+        [
+            {default_http_connect_timeout_ms, 10000},
+            {default_http_recv_timeout_ms, 15000}
+        ]
+    },
+
+    % 5. test: HTTP request with timeouts as parameters
+    Test5 = {
+        get,
+        [HTTP_URL, Headers, Body, [
+            {connect_timeout,1000},
+            {recv_timeout,2000}
+        ]],
+        [get, Parsed_HTTP_URL, Headers, Body, [
+            with_body,
+            {max_body, undefined},
+            {pool, false},
+            {connect_timeout,1000},
+            {recv_timeout,2000}
+        ]]
+    },
+
+    % 6. test: HTTPS request
+    Test6 = {
         post,
         [HTTPS_URL, Headers],
         [post, Parsed_HTTPS_URL, Headers, <<>>, [
             {connect_options, [{verify_type, verify_peer}]},
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
-    % 5. test: HTTPS request with some ssl options
-    Test5 = {
+    % 7. test: HTTPS request with some ssl options
+    Test7 = {
         post,
         [HTTPS_URL, Headers, Body, [
             option,
@@ -116,12 +157,14 @@ api_t() ->
             ]},
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
-    % 6. test: HTTPS request with some ssl options overriding verify_type
-    Test6 = {
+    % 8. test: HTTPS request with some ssl options overriding verify_type
+    Test8 = {
         put,
         [HTTPS_URL, Headers, Body, [
             {ssl_options, [
@@ -138,24 +181,28 @@ api_t() ->
             ]},
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
-    % 7. test: insecure HTTPS request
-    Test7 = {
+    % 9. test: insecure HTTPS request
+    Test9 = {
         post,
         [HTTPS_URL, Headers, Body, [insecure]],
         [post, Parsed_HTTPS_URL, Headers, Body, [
             {connect_options, []},
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
-    % 8. test: insecure HTTPS request with some ssl options
-    Test8 = {
+    % 10. test: insecure HTTPS request with some ssl options
+    Test10 = {
         get,
         [HTTPS_URL, Headers, Body, [
             insecure,
@@ -166,21 +213,17 @@ api_t() ->
             {connect_options, [{keyfile, "a"}, {certfile, "b"}]},
             with_body,
             {max_body, 987665},
-            {pool, false}
+            {pool, false},
+            {connect_timeout,8000},
+            {recv_timeout,5000}
         ]]
     },
 
     % Do the tests
-    lists:foreach(
-        fun({Method, Args, Expected}) ->
-            meck:expect(hackney, request,
-                fun(AMthd, AURL, AHdrs, ABd, AOpts) ->
-                    % If args are not as expected, the test will fail here
-                    compare_args([AMthd, AURL, AHdrs, ABd, AOpts], Expected),
-                    {ok, 200, [], <<>>}
-                end),
-            ?assertEqual({ok, 200, [], <<>>}, erlang:apply(http_client, Method, Args))
-        end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7, Test8]),
+    lists:foreach(fun
+        ({Method, Args, Expected}) -> run_api_test(Method, Args, Expected);
+        ({Method, Args, Expected, Envs}) -> run_api_test(Method, Args, Expected, Envs)
+    end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7, Test8, Test9, Test10]),
     ?assert(meck:validate(hackney)).
 
 
@@ -305,6 +348,23 @@ request_return_stream_t() ->
         end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7]),
     ?assert(meck:validate(hackney)).
 
+% Runs API test
+run_api_test(Method, Args, Expected) ->
+    meck:expect(hackney, request,
+        fun(AMthd, AURL, AHdrs, ABd, AOpts) ->
+            % If args are not as expected, the test will fail here
+            compare_args([AMthd, AURL, AHdrs, ABd, AOpts], Expected),
+            {ok, 200, [], <<>>}
+        end),
+    ?assertEqual({ok, 200, [], <<>>}, erlang:apply(http_client, Method, Args)).
+
+% Runs API test with predefined web_client app envs
+run_api_test(Method, Args, Expected, Envs) ->
+    AppEnvs = application:get_all_env(web_client),
+    [application:set_env(web_client, K, V) || {K, V} <- Envs],
+    run_api_test(Method, Args, Expected),
+    [application:unset_env(web_client, K) || {K, _V} <- Envs],
+    [application:set_env(web_client, K, V) || {K, V} <- AppEnvs].
 
 % Asserts if the arguments of actual call to hackney are the same as expected.
 compare_args(Actual, Expected) ->
