@@ -70,9 +70,13 @@ insecure |
 {max_redirect, integer()} |
 %% false by default, to force the redirection even on POST
 {force_redirect, boolean()} |
-%% timeout used when estabilishing a connection, in milliseconds. Default: 8000.
+%% timeout used when establishing a connection, in milliseconds.
+%% Defaults to 'default_http_connect_timeout_ms' env of web_client app,
+%% and if not set defaults to 8000.
 {connect_timeout, infinity | integer()} |
-%% timeout used when receiving a connection. Default: 5000.
+%% timeout used when receiving a connection, in milliseconds.
+%% Defaults to 'default_http_recv_timeout_ms' env of web_client app,
+%% and if not set defaults to 5000.
 {recv_timeout, infinity | integer()} |
 %% to connect via a proxy
 {proxy, proxy_opt()}.
@@ -341,16 +345,24 @@ request(Method, URL, Headers, Body) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec request(Method :: method(), URL :: url(), ReqHdrs :: headers(),
-    ReqBd :: body(), Options :: opts()) ->
+    ReqBd :: body(), Opts :: opts()) ->
     {ok, code(), headers(), body()} | {error, term()}.
-request(Method, URL, ReqHdrs, ReqBd, Options) ->
+request(Method, URL, ReqHdrs, ReqBd, Opts) ->
+    ConnectTimeout = proplists:get_value(connect_timeout, Opts,
+        application:get_env(web_client, default_http_connect_timeout_ms, 8000)),
+    Opts1 = proplists:delete(connect_timeout, Opts),
+    RecvTimeout = proplists:get_value(recv_timeout, Opts1,
+        application:get_env(web_client, default_http_recv_timeout_ms, 5000)),
+    Opts2 = proplists:delete(recv_timeout, Opts1),
     % If max_body is specified in opts, accept the option, else use 'undefined'
     % which will cause the function to return all the body regardless of
     % its length.
-    MaxBd = proplists:get_value(max_body, Options, undefined),
+    MaxBd = proplists:get_value(max_body, Opts2, undefined),
+    Opts3 = proplists:delete(max_body, Opts2),
     % with_body option forces hackney to always return the body
-    Opts = [with_body, {max_body, MaxBd} | proplists:delete(max_body, Options)],
-    do_request(Method, URL, ReqHdrs, ReqBd, Opts).
+    Opts4 = [with_body, {max_body, MaxBd}, {connect_timeout, ConnectTimeout},
+        {recv_timeout, RecvTimeout} | Opts3],
+    do_request(Method, URL, ReqHdrs, ReqBd, Opts4).
 
 
 %%--------------------------------------------------------------------

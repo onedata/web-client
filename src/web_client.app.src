@@ -8,6 +8,11 @@
             hackney,
             crypto
         ]},
-        {env, []}
+        {env, [
+            %% default timeout used when establishing a connection, in milliseconds
+            {default_http_connect_timeout_ms, 15000},
+            %% default timeout used when receiving a connection, in milliseconds
+            {default_http_recv_timeout_ms, 15000}
+        ]}
     ]
 }.
