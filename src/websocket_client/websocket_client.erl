@@ -63,13 +63,13 @@ cast(Client, Frame) ->
 ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
     Transport = case Protocol of
                     wss ->
-                        ssl2;
+                        etls;
                     ws ->
                         gen_tcp
                 end,
     SockReply = case Transport of
-                    ssl2 ->
-                        ssl2:connect(Host, Port, TransportOpts ++ [
+                    etls ->
+                        etls:connect(Host, Port, TransportOpts ++ [
                             {active, false},
                             {packet, 0}
                         ], 6000);
@@ -106,8 +106,8 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
                                                 {ok, HS, KA}
                                         end,
         case Transport of
-            ssl2 ->
-                ssl2:setopts(Socket, [{active, true}]);
+            etls ->
+                etls:setopts(Socket, [{active, true}]);
             gen_tcp ->
                 inet:setopts(Socket, [{active, true}])
         end,
