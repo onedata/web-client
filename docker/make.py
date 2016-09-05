@@ -24,6 +24,14 @@ import sys
 from environment import docker
 
 
+def default_keys_location():
+    ssh_dir = expanduser('~/.ssh')
+    ssh_slash_docker = os.path.join(ssh_dir, 'docker')
+    if os.path.isdir(ssh_slash_docker):
+        ssh_dir = ssh_slash_docker
+    return ssh_dir
+
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description='Run a command inside a dockerized development environment.')
@@ -43,17 +51,16 @@ parser.add_argument(
     dest='src')
 
 parser.add_argument(
-    '-d', '--dst',
-    action='store',
-    default=None,
-    help='destination directory where the build will be stored; defaults '
-         'to source dir if unset',
-    dest='dst')
+    '--no-cache',
+    action='store_false',
+    default=True,
+    help='disable mounting /var/cache/ccache and /var/cache/rebar3',
+    dest='mount_cache')
 
 parser.add_argument(
     '-k', '--keys',
     action='store',
-    default=expanduser("~/.ssh"),
+    default=default_keys_location(),
     help='directory of ssh keys used for dependency fetching',
     dest='keys')
 
@@ -75,7 +82,7 @@ parser.add_argument(
     '-w', '--workdir',
     action='store',
     default=None,
-    help='path to the working directory; defaults to destination dir if unset',
+    help='path to the working directory; defaults to src dir if unset',
     dest='workdir')
 
 parser.add_argument(
@@ -99,10 +106,14 @@ parser.add_argument(
     help='run the container with --privileged=true',
     dest='privileged')
 
-[args, pass_args] = parser.parse_known_args()
+parser.add_argument(
+    '--cpuset-cpus',
+    action='store',
+    default=None,
+    help='CPUs in which to allow execution (0-3, 0,1)',
+    dest='cpuset_cpus')
 
-destination = args.dst if args.dst else args.src
-workdir = args.workdir if args.workdir else destination
+[args, pass_args] = parser.parse_known_args()
 
 command = '''
 import os, shutil, subprocess, sys
@@ -110,6 +121,7 @@ import os, shutil, subprocess, sys
 os.environ['HOME'] = '/root'
 
 ssh_home = '/root/.ssh'
+docker_home = '/root/.docker/'
 if {shed_privileges}:
     useradd = ['useradd', '--create-home', '--uid', '{uid}', 'maketmp']
     if {groups}:
@@ -120,13 +132,11 @@ if {shed_privileges}:
     os.environ['PATH'] = os.environ['PATH'].replace('sbin', 'bin')
     os.environ['HOME'] = '/home/maketmp'
     ssh_home = '/home/maketmp/.ssh'
+    docker_home = '/home/maketmp/.docker'
+    docker_gid = os.stat('/var/run/docker.sock').st_gid
+    os.setgroups([docker_gid])
     os.setregid({gid}, {gid})
     os.setreuid({uid}, {uid})
-
-if '{src}' != '{dst}':
-    ret = subprocess.call(['rsync', '--archive', '/tmp/src/', '{dst}'])
-    if ret != 0:
-        sys.exit(ret)
 
 shutil.copytree('/tmp/keys', ssh_home)
 for root, dirs, files in os.walk(ssh_home):
@@ -134,6 +144,19 @@ for root, dirs, files in os.walk(ssh_home):
         os.chmod(os.path.join(root, dir), 0o700)
     for file in files:
         os.chmod(os.path.join(root, file), 0o600)
+
+# Try to copy config.json, continue if it fails (might not exist on host).
+try:
+    os.makedirs(docker_home)
+except:
+    pass
+try:
+    shutil.copyfile(
+        '/tmp/docker_config/config.json',
+        os.path.join(docker_home, 'config.json'
+    ))
+except:
+    pass
 
 sh_command = 'eval $(ssh-agent) > /dev/null; ssh-add 2>&1; {command} {params}'
 ret = subprocess.call(['sh', '-c', sh_command])
@@ -145,12 +168,30 @@ command = command.format(
     uid=os.geteuid(),
     gid=os.getegid(),
     src=args.src,
-    dst=destination,
     shed_privileges=(platform.system() == 'Linux' and os.geteuid() != 0),
     groups=args.groups)
 
-reflect = [(destination, 'rw')]
+# Mount docker socket so dockers can start dockers
+reflect = [(args.src, 'rw'), ('/var/run/docker.sock', 'rw')]
 reflect.extend(zip(args.reflect, ['rw'] * len(args.reflect)))
+if args.mount_cache:
+    reflect.extend([
+        ('/var/cache/ccache', 'rw'), ('/var/cache/rebar3', 'rw')
+    ])
+
+# Mount keys required for git and docker config that holds auth to
+# docker.onedata.org, so the docker can pull images from there.
+# Mount it in /tmp/docker_config and then cp the json.
+# If .docker is not existent on host, just skip the volume and config copying.
+volumes = [
+    (args.keys, '/tmp/keys', 'ro')
+]
+if os.path.isdir(expanduser('~/.docker')):
+    volumes += [(expanduser('~/.docker'), '/tmp/docker_config', 'ro')]
+
+# @TODO MUSIMY WPYCHAC DOCKERY Z GUI DO OFICJALNEGO REPO ZEBY LUDZIE MOGLI BUDOWAC,
+# JAK NIE TO FALLBACK DO DOCKER.ONEDATA.ORG
+# NIE WOLNO PRZEPUSCIC BEZ TEGO PRZEZ REVIEW!!!!
 
 split_envs = [e.split('=') for e in args.envs]
 envs = {kv[0]: kv[1] for kv in split_envs}
@@ -159,11 +200,11 @@ ret = docker.run(tty=True,
                  interactive=True,
                  rm=True,
                  reflect=reflect,
-                 volumes=[(args.keys, '/tmp/keys', 'ro'),
-                          (args.src, '/tmp/src', 'ro')],
+                 volumes=volumes,
                  envs=envs,
-                 workdir=workdir,
+                 workdir=args.workdir if args.workdir else args.src,
                  image=args.image,
-                 run_params=(['--privileged=true'] if args.privileged else []),
+                 privileged=args.privileged,
+                 cpuset_cpus=args.cpuset_cpus,
                  command=['python', '-c', command])
 sys.exit(ret)
