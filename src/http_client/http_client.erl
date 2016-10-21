@@ -47,6 +47,8 @@ patch | purge. %% RFC-5789
 -type code() :: integer().
 % Request options
 -type opts() :: [opt()].
+% Response
+-type response() :: Response :: response().
 
 % All possible request options
 -type opt() ::
@@ -88,7 +90,7 @@ binary() |
 %% Host and Port to connect to
 {connect, Host :: binary(), Port :: binary()}.
 
-% Opts passed to hackney
+% Options passed to hackney
 -type hackney_opts() :: [term()].
 
 %% API - convenience functions
@@ -103,7 +105,7 @@ binary() |
 -export([request_return_stream/5]).
 
 -export_type([method/0, url/0, headers/0, body/0, code/0,
-    opts/0, opt/0, proxy_opt/0]).
+    opts/0, opt/0, proxy_opt/0, response/0]).
 
 
 %%%===================================================================
@@ -115,8 +117,7 @@ binary() |
 %% Performs a HTTP GET request.
 %% @end
 %%--------------------------------------------------------------------
--spec get(URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec get(URL :: url()) -> Response :: response().
 get(URL) ->
     request(get, URL, [], <<>>, []).
 
@@ -126,8 +127,7 @@ get(URL) ->
 %% Performs a HTTP GET request.
 %% @end
 %%--------------------------------------------------------------------
--spec get(URL :: url(), Headers :: headers()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec get(URL :: url(), Headers :: headers()) -> Response :: response().
 get(URL, Headers) ->
     request(get, URL, Headers, <<>>, []).
 
@@ -138,7 +138,7 @@ get(URL, Headers) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec get(URL :: url(), Headers :: headers(), Body :: body()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Response :: response().
 get(URL, Headers, Body) ->
     request(get, URL, Headers, Body, []).
 
@@ -149,10 +149,9 @@ get(URL, Headers, Body) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec get(URL :: url(), Headers :: headers(), Body :: body(),
-    Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-get(URL, Headers, Body, Options) ->
-    request(get, URL, Headers, Body, Options).
+    Opts :: opts()) -> Response :: response().
+get(URL, Headers, Body, Opts) ->
+    request(get, URL, Headers, Body, Opts).
 
 
 %%--------------------------------------------------------------------
@@ -160,8 +159,7 @@ get(URL, Headers, Body, Options) ->
 %% Performs a HTTP POST request.
 %% @end
 %%--------------------------------------------------------------------
--spec post(URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec post(URL :: url()) -> Response :: response().
 post(URL) ->
     request(post, URL, [], <<>>, []).
 
@@ -171,8 +169,7 @@ post(URL) ->
 %% Performs a HTTP POST request.
 %% @end
 %%--------------------------------------------------------------------
--spec post(URL :: url(), Headers :: headers()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec post(URL :: url(), Headers :: headers()) -> Response :: response().
 post(URL, Headers) ->
     request(post, URL, Headers, <<>>, []).
 
@@ -183,7 +180,7 @@ post(URL, Headers) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec post(URL :: url(), Headers :: headers(), Body :: body()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Response :: response().
 post(URL, Headers, Body) ->
     request(post, URL, Headers, Body, []).
 
@@ -193,11 +190,10 @@ post(URL, Headers, Body) ->
 %% Performs a HTTP POST request.
 %% @end
 %%--------------------------------------------------------------------
--spec post(URL :: url(), Headers :: headers(), Body :: body(),
-    Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-post(URL, Headers, Body, Options) ->
-    request(post, URL, Headers, Body, Options).
+-spec post(URL :: url(), Headers :: headers(), Body :: body(), Opts :: opts()) ->
+    Response :: response().
+post(URL, Headers, Body, Opts) ->
+    request(post, URL, Headers, Body, Opts).
 
 
 %%--------------------------------------------------------------------
@@ -205,8 +201,7 @@ post(URL, Headers, Body, Options) ->
 %% Performs a HTTP PUT request.
 %% @end
 %%--------------------------------------------------------------------
--spec put(URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec put(URL :: url()) -> Response :: response().
 put(URL) ->
     request(put, URL, [], <<>>, []).
 
@@ -216,8 +211,7 @@ put(URL) ->
 %% Performs a HTTP PUT request.
 %% @end
 %%--------------------------------------------------------------------
--spec put(URL :: url(), Headers :: headers()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec put(URL :: url(), Headers :: headers()) -> Response :: response().
 put(URL, Headers) ->
     request(put, URL, Headers, <<>>, []).
 
@@ -228,7 +222,7 @@ put(URL, Headers) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec put(URL :: url(), Headers :: headers(), Body :: body()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Response :: response().
 put(URL, Headers, Body) ->
     request(put, URL, Headers, Body, []).
 
@@ -238,11 +232,10 @@ put(URL, Headers, Body) ->
 %% Performs a HTTP PUT request.
 %% @end
 %%--------------------------------------------------------------------
--spec put(URL :: url(), Headers :: headers(), Body :: body(),
-    Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-put(URL, Headers, Body, Options) ->
-    request(put, URL, Headers, Body, Options).
+-spec put(URL :: url(), Headers :: headers(), Body :: body(), Opts :: opts()) ->
+    Response :: response().
+put(URL, Headers, Body, Opts) ->
+    request(put, URL, Headers, Body, Opts).
 
 
 %%--------------------------------------------------------------------
@@ -250,8 +243,7 @@ put(URL, Headers, Body, Options) ->
 %% Performs a HTTP DELETE request.
 %% @end
 %%--------------------------------------------------------------------
--spec delete(URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec delete(URL :: url()) -> Response :: response().
 delete(URL) ->
     request(delete, URL, [], <<>>, []).
 
@@ -261,8 +253,7 @@ delete(URL) ->
 %% Performs a HTTP DELETE request.
 %% @end
 %%--------------------------------------------------------------------
--spec delete(URL :: url(), Headers :: headers()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec delete(URL :: url(), Headers :: headers()) -> Response :: response().
 delete(URL, Headers) ->
     request(delete, URL, Headers, <<>>, []).
 
@@ -273,7 +264,7 @@ delete(URL, Headers) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec delete(URL :: url(), Headers :: headers(), Body :: body()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Response :: response().
 delete(URL, Headers, Body) ->
     request(delete, URL, Headers, Body, []).
 
@@ -283,11 +274,10 @@ delete(URL, Headers, Body) ->
 %% Performs a HTTP DELETE request.
 %% @end
 %%--------------------------------------------------------------------
--spec delete(URL :: url(), Headers :: headers(), Body :: body(),
-    Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-delete(URL, Headers, Body, Options) ->
-    request(delete, URL, Headers, Body, Options).
+-spec delete(URL :: url(), Headers :: headers(), Body :: body(), Opts :: opts()) ->
+    Response :: response().
+delete(URL, Headers, Body, Opts) ->
+    request(delete, URL, Headers, Body, Opts).
 
 
 %%--------------------------------------------------------------------
@@ -295,8 +285,7 @@ delete(URL, Headers, Body, Options) ->
 %% Performs a HTTP request.
 %% @end
 %%--------------------------------------------------------------------
--spec request(URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec request(URL :: url()) -> Response :: response().
 request(URL) ->
     request(get, URL, [], <<>>, []).
 
@@ -306,8 +295,7 @@ request(URL) ->
 %% Performs a HTTP request.
 %% @end
 %%--------------------------------------------------------------------
--spec request(Method :: method(), URL :: url()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+-spec request(Method :: method(), URL :: url()) -> Response :: response().
 request(Method, URL) ->
     request(Method, URL, [], <<>>, []).
 
@@ -318,7 +306,7 @@ request(Method, URL) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec request(Method :: method(), URL :: url(), Headers :: headers()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Response :: response().
 request(Method, URL, Headers) ->
     request(Method, URL, Headers, <<>>, []).
 
@@ -329,8 +317,7 @@ request(Method, URL, Headers) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec request(Method :: method(), URL :: url(), Headers :: headers(),
-    Body :: body()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
+    Body :: body()) -> Response :: response().
 request(Method, URL, Headers, Body) ->
     request(Method, URL, Headers, Body, []).
 
@@ -340,17 +327,16 @@ request(Method, URL, Headers, Body) ->
 %% Performs a HTTP request.
 %% @end
 %%--------------------------------------------------------------------
--spec request(Method :: method(), URL :: url(), ReqHdrs :: headers(),
-    ReqBd :: body(), Options :: opts()) ->
-    {ok, code(), headers(), body()} | {error, term()}.
-request(Method, URL, ReqHdrs, ReqBd, Options) ->
+-spec request(Method :: method(), URL :: url(), Headers :: headers(),
+    Body :: body(), Opts :: opts()) -> Response :: response().
+request(Method, URL, Headers, Body, Opts) ->
     % If max_body is specified in opts, accept the option, else use 'undefined'
     % which will cause the function to return all the body regardless of
     % its length.
-    MaxBd = proplists:get_value(max_body, Options, undefined),
+    MaxBody = proplists:get_value(max_body, Opts, undefined),
     % with_body option forces hackney to always return the body
-    Opts = [with_body, {max_body, MaxBd} | proplists:delete(max_body, Options)],
-    do_request(Method, URL, ReqHdrs, ReqBd, Opts).
+    Opts2 = [with_body | lists:keystore(max_body, 1, Opts, {max_body, MaxBody})],
+    do_request(Method, URL, Headers, Body, Opts2).
 
 
 %%--------------------------------------------------------------------
@@ -360,11 +346,10 @@ request(Method, URL, ReqHdrs, ReqBd, Options) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec request_return_stream(Method :: method(), URL :: url(),
-    ReqHdrs :: headers(), ReqBd :: body(), Options :: opts()) ->
+    Headers :: headers(), Body :: body(), Opts :: opts()) ->
     {ok, StrmRef :: term()} | {error, term()}.
-request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
-    Opts = [async | Options],
-    do_request(Method, URL, ReqHdrs, ReqBd, Opts).
+request_return_stream(Method, URL, Headers, Body, Opts) ->
+    do_request(Method, URL, Headers, Body, [async | Opts]).
 
 
 %% ====================================================================
@@ -377,22 +362,22 @@ request_return_stream(Method, URL, ReqHdrs, ReqBd, Options) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec do_request(Method :: method(), URL :: url(),
-    ReqHdrs :: headers(), ReqBd :: body(), Options :: hackney_opts()) ->
-    {ok, code(), headers(), body()} | {ok, StrmRef :: term()} | {error, term()}.
-do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
-    HcknURL0 = hackney_url:parse_url(URL),
-    {HcknURL, Opts} =
-        case HcknURL0#hackney_url.transport of
+    Headers :: headers(), Body :: body(), Opts :: hackney_opts()) ->
+    Response :: response() | {ok, StrmRef :: term()}.
+do_request(Method, URL, Headers, Body, Opts) ->
+    HcknURL = hackney_url:parse_url(URL),
+    {HcknURL2, Opts2} =
+        case HcknURL#hackney_url.transport of
             hackney_ssl_transport ->
                 % Use etls for HTTPS connections
                 {
-                    HcknURL0#hackney_url{transport = hackney_etls_transport},
-                    prepare_ssl_opts(Options)
+                    HcknURL#hackney_url{transport = hackney_etls_transport},
+                    prepare_ssl_opts(Opts)
                 };
             _ ->
                 {
-                    HcknURL0,
-                    Options
+                    HcknURL,
+                    Opts
                 }
         end,
     % Do not use hackney pools = new connection every request.
@@ -403,11 +388,11 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
     % @todo maybe it is connected with using custom transport
     % @todo   and hackney calls some callback from default one
     % @todo maybe its etls problem
-    OptsWithPool = [{pool, false} | Opts],
-    case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, OptsWithPool) of
+    Opts3 = [{pool, false} | Opts2],
+    case hackney:request(Method, HcknURL2, Headers, Body, Opts3) of
         {error, closed} ->
             % If {error, closed} appears, retry once.
-            hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, Opts);
+            hackney:request(Method, HcknURL2, Headers, Body, Opts3);
         Result ->
             Result
     end.
@@ -415,35 +400,24 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
 
 %%--------------------------------------------------------------------
 %% @doc
-%% Prepares options for hackney. Analyses ssl_options passed in Options list
+%% Prepares options for hackney. Analyses ssl_options passed in Opts list
 %% and transfors them in connect_opts, which will be fed to etls:connect.
 %% @end
 %%--------------------------------------------------------------------
--spec prepare_ssl_opts(Options :: opts()) -> Options :: opts().
-prepare_ssl_opts(Options) ->
-    SSLOpts = proplists:get_value(ssl_options, Options, []),
-    ConnectOpts =
-        case proplists:get_value(insecure, Options, undefined) of
-            true ->
-                % Insecure option is present,
-                % don't add verify flag (don't modify SSL opts at all)
-                SSLOpts;
-            undefined ->
-                % Insecure option is not present,
-                % add verify flag if it's not present yet
-                SSLOMerged =
-                    case proplists:get_value(verify_type, SSLOpts, undefined) of
-                        undefined ->
-                            % Verify flag is not present, add it
-                            [{verify_type, verify_peer} | SSLOpts];
-                        _ ->
-                            % Verify flag is present, do not modify ssl opts
-                            SSLOpts
-                    end,
-                SSLOMerged
-        end,
-    % Remove ssl_options from the proplist - no longer needed
-    NoSSLOpts = proplists:delete(ssl_options, Options),
-    % Remove insecure from the proplist - no longer needed
-    NoInsecureFlag = proplists:delete(insecure, NoSSLOpts),
-    [{connect_options, ConnectOpts} | NoInsecureFlag].
+-spec prepare_ssl_opts(Opts :: opts()) -> Opts :: opts().
+prepare_ssl_opts(Opts) ->
+    SSLOpts = proplists:get_value(ssl_options, Opts, []),
+    ConnectOpts = case lists:member(insecure, Opts) of
+        true ->
+            lists:keystore(verify_type, 1, SSLOpts, {verify_type, verify_none});
+        false ->
+            case lists:keyfind(verify_type, 1, SSLOpts) of
+                false ->
+                    lists:keystore(verify_type, 1, SSLOpts, {verify_type, verify_peer});
+                _ ->
+                    SSLOpts
+            end
+    end,
+    Opts2 = lists:delete(insecure, Opts),
+    Opts3 = lists:keydelete(ssl_options, 1, Opts2),
+    [{connect_options, ConnectOpts} | Opts3].
