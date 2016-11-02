@@ -15,8 +15,7 @@ test_distributed/cover_tmp.spec
 test_distributed/logs/*
 test_coverage
 
-deps
 doc
-ebin
 priv
-
+_build
+compile_commands.json

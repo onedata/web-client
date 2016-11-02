@@ -52,7 +52,7 @@ patch | purge. %% RFC-5789
 -type opt() ::
 %% to perform a https request without verifying the server cert
 insecure |
-%% to pass ssl options to ssl2
+%% to pass ssl options to etls
 {ssl_options, [term()]} |
 %% Specifying maximum body length that can be automatically returned
 %% from request. By default, whole body is returned regardless of its size.
@@ -396,9 +396,9 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
     {HcknURL, Opts} =
         case HcknURL0#hackney_url.transport of
             hackney_ssl_transport ->
-                % Use ssl2 for HTTPS connections
+                % Use etls for HTTPS connections
                 {
-                    HcknURL0#hackney_url{transport = hackney_ssl2_transport},
+                    HcknURL0#hackney_url{transport = hackney_etls_transport},
                     prepare_ssl_opts(Options)
                 };
             _ ->
@@ -410,11 +410,11 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
     % Do not use hackney pools = new connection every request.
     % When hackney uses socket pools, sometimes it grabs a
     % disconnected socket and returns {error, closed}.
-    % Sometimes, ssl2 returns {error, 'UNEXPECTED_RECORD'}.
+    % Sometimes, etls returns {error, 'UNEXPECTED_RECORD'}.
     % @todo check why and when this happens
     % @todo maybe it is connected with using custom transport
     % @todo   and hackney calls some callback from default one
-    % @todo maybe its ssl2 problem
+    % @todo maybe its etls problem
     OptsWithPool = [{pool, false} | Opts],
     case hackney:request(Mthd, HcknURL, ReqHdrs, ReqBd, OptsWithPool) of
         {error, closed} ->
@@ -428,7 +428,7 @@ do_request(Mthd, URL, ReqHdrs, ReqBd, Options) ->
 %%--------------------------------------------------------------------
 %% @doc
 %% Prepares options for hackney. Analyses ssl_options passed in Options list
-%% and transfors them in connect_opts, which will be fed to ssl2:connect.
+%% and transfors them in connect_opts, which will be fed to etls:connect.
 %% @end
 %%--------------------------------------------------------------------
 -spec prepare_ssl_opts(Options :: opts()) -> Options :: opts().

@@ -1,30 +1,37 @@
 {
     "dirs_config": {
-        "op_ccm": {
-            "input_dir": "rel/op_ccm",
-            "target_dir": "rel/test_cluster"
+        "cluster_manager": {
+            "input_dir": "_build/default/rel/cluster_manager",
+            "target_dir": "_build/default/rel/test_cluster"
         },
         "op_worker": {
-            "input_dir": "rel/op_worker",
-            "target_dir": "rel/test_cluster"
+            "input_dir": "_build/default/rel/op_worker",
+            "target_dir": "_build/default/rel/test_cluster"
         },
-        "globalregistry": {
-            "input_dir": "rel/globalregistry",
-            "target_dir": "rel/test_cluster"
+        "cluster_worker": {
+            "input_dir": "_build/default/rel/cluster_worker",
+            "target_dir": "_build/default/rel/test_cluster"
+        },
+        "oz_worker": {
+            "input_dir": "_build/default/rel/oz_worker",
+            "target_dir": "_build/default/rel/test_cluster"
         },
         "appmock": {
-            "input_dir": "rel/appmock",
-            "target_dir": "rel/test_cluster"
+            "input_dir": "_build/default/rel/appmock",
+            "target_dir": "_build/default/rel/test_cluster"
         },
         "onepanel": {
-            "input_dir": "rel_oneprovider/op_panel",
-            "target_dir": "rel/test_cluster"
+            "input_dir": "_build/default/rel/onepanel",
+            "target_dir": "_build/default/rel/test_cluster"
         }
     },
     "os_configs": {
         "cfg1": {
             "storages": [
-                "/mnt/st1"
+                {
+                    "type": "posix",
+                    "name": "/mnt/st1"
+                }
             ],
             "users": [
                 "user1"
@@ -37,8 +44,14 @@
         },
         "cfg2": {
             "storages": [
-                "/mnt/st1",
-                "/mnt/st2"
+                {
+                    "type": "posix",
+                    "name": "/mnt/st1"
+                },
+                {
+                    "type": "posix",
+                    "name": "/mnt/st2"
+                }
             ],
             "users": [
                 "user1",
@@ -58,27 +71,29 @@
                     "user3"
                 ],
                 "fuse": [
-                    "u1",
-                    "u2",
-                    "u3"
+                    "user1",
+                    "user2",
+                    "user3"
                 ]
             }
         }
     },
     "provider_domains": {
         "p1": {
-            "db_driver": "couchbase",
+            "db_driver": "couchdb",
             "os_config": "cfg1",
-            "op_ccm": {
-                "ccm1": {
+            "cluster_manager": {
+                "cm1": {
                     "vm.args": {
                         "setcookie": "cookie1"
                     },
                     "sys.config": {
-                        "ccm_nodes": [
-                            "ccm1"
-                        ],
-                        "worker_num": 1
+                        "cluster_manager": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "worker_num": 1
+                        }
                     }
                 }
             },
@@ -88,32 +103,36 @@
                         "setcookie": "cookie1"
                     },
                     "sys.config": {
-                        "ccm_nodes": [
-                            "ccm1"
-                        ],
-                        "db_nodes": [
-                            "dbnode1",
-                            "dbnode2"
-                        ],
-                        "global_registry_domain": "gr",
-                        "verify_gr_cert": false
+                        "op_worker": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "db_nodes": [
+                                "dbnode1",
+                                "dbnode2"
+                            ],
+                            "oz_domain": "oz",
+                            "verify_oz_cert": false
+                        }
                     }
                 }
             }
         },
-        "p2.gr": {
-            "db_driver": "riak",
+        "p2.oz": {
+            "db_driver": "couchdb",
             "os_config": "cfg2",
-            "op_ccm": {
-                "ccm1": {
+            "cluster_manager": {
+                "cm1": {
                     "vm.args": {
                         "setcookie": "cookie2"
                     },
                     "sys.config": {
-                        "ccm_nodes": [
-                            "ccm1"
-                        ],
-                        "worker_num": 2
+                        "cluster_manager": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "worker_num": 2
+                        }
                     }
                 }
             },
@@ -123,14 +142,16 @@
                         "setcookie": "cookie2"
                     },
                     "sys.config": {
-                        "ccm_nodes": [
-                            "ccm1"
-                        ],
-                        "db_nodes": [
-                            "riaknode1"
-                        ],
-                        "global_registry_domain": "gr",
-                        "verify_gr_cert": false
+                        "op_worker": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "db_nodes": [
+                                "dbnode1"
+                            ],
+                            "oz_domain": "oz",
+                            "verify_oz_cert": false
+                        }
                     }
                 },
                 "worker2": {
@@ -138,34 +159,96 @@
                         "setcookie": "cookie2"
                     },
                     "sys.config": {
-                        "ccm_nodes": [
-                            "ccm1"
-                        ],
-                        "db_nodes": [
-                            "riaknode1"
-                        ],
-                        "global_registry_domain": "gr",
-                        "verify_gr_cert": false
+                        "op_worker": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "db_nodes": [
+                                "dbnode1"
+                            ],
+                            "oz_domain": "oz",
+                            "verify_oz_cert": false
+                        }
                     }
                 }
             }
         }
     },
-    "globalregistry_domains": {
-        "gr": {
-            "globalregistry": {
+    "cluster_domains": {
+        "p3": {
+            "db_driver": "couchdb",
+            "os_config": "cfg1",
+            "cluster_manager": {
+                "cm1": {
+                    "vm.args": {
+                        "setcookie": "cookie1"
+                    },
+                    "sys.config": {
+                        "cluster_manager": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "worker_num": 1
+                        }
+                    }
+                }
+            },
+            "cluster_worker": {
+                "worker1": {
+                    "vm.args": {
+                        "setcookie": "cookie1"
+                    },
+                    "sys.config": {
+                        "cluster_worker": {
+                            "cm_nodes": [
+                                "cm1"
+                            ],
+                            "db_nodes": [
+                                "dbnode1",
+                                "dbnode2"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "zone_domains": {
+        "oz": {
+            "db_driver": "couchdb",
+            "cluster_manager": {
+                "cm": {
+                    "vm.args": {
+                        "setcookie": "cookie3"
+                    },
+                    "sys.config": {
+                        "cluster_manager": {
+                            "cm_nodes": [
+                                "cm"
+                            ],
+                            "worker_num": 1
+                        }
+                    }
+                }
+            },
+            "oz_worker": {
                 "node1": {
                     "vm.args": {
                         "setcookie": "cookie3"
                     },
                     "sys.config": {
-                        "db_nodes": [
-                            "db"
-                        ],
-                        "http_domain": {
-                            "string": "127.0.0.1"
-                        },
-                        "dev_mode": true
+                        "oz_worker": {
+                            "cm_nodes": [
+                                "cm"
+                            ],
+                            "db_nodes": [
+                                "127.0.0.1:49161"
+                            ],
+                            "http_domain": {
+                                "string": "127.0.0.1"
+                            },
+                            "dev_mode": true
+                        }
                     }
                 }
             }
@@ -173,66 +256,66 @@
     },
     "global_setup": {
         "users": {
-            "u1": {
-                "default_space": "s1"
+            "user1": {
+                "default_space": "space1"
             },
-            "u2": {
-                "default_space": "s2"
+            "user2": {
+                "default_space": "space2"
             },
-            "u3": {
-                "default_space": "s1"
+            "user3": {
+                "default_space": "space1"
             }
         },
         "groups": {
-            "g1": {
+            "group1": {
                 "users": [
-                    "u1",
-                    "u3"
+                    "user1",
+                    "user3"
                 ]
             },
-            "g2": {
+            "group2": {
                 "users": [
-                    "u2"
+                    "user2"
                 ]
             }
         },
         "spaces": {
-            "s1": {
-                "displayed_name": "s1",
+            "space1": {
+                "displayed_name": "space1",
                 "users": [
-                    "u1",
-                    "u2",
-                    "u3"
+                    "user1",
+                    "user2",
+                    "user3"
                 ],
                 "groups": [
-                    "g1"
+                    "group1"
                 ],
-                "providers": [
-                    {
-                        "provider": "p1",
+                "providers": {
+                    "p1": {
+                        "storage": "/mnt/st1",
                         "supported_size": 1000000000
                     }
-                ]
+                }
             },
-            "s2": {
-                "displayed_name": "s2",
+            "space2": {
+                "displayed_name": "space2",
                 "users": [
-                    "u2"
+                    "user2"
                 ],
                 "groups": [
-                    "g2"
+                    "group2"
                 ],
-                "providers": [
-                    {
-                        "provider": "p2.gr",
+                "providers": {
+                    "p2.oz": {
+                        "storage": "/mnt/st2",
                         "supported_size": 1000000000
                     }
-                ]
+                }
             }
         }
     },
     "appmock_domains": {
-        "p3": {
+        "p4": {
             "appmock": {
                 "appmock1": {
                     "mocked_app": "op_worker",
@@ -240,80 +323,81 @@
                         "setcookie": "cookie5"
                     },
                     "sys.config": {
-                        "app_description_file": "./example_app_description.erl"
+                        "appmock": {
+                            "app_description_file": "./example_app_description.erl"
+                        }
                     }
                 }
             }
         }
     },
     "oneclient": {
-        "client_host_1": {
+        "client-host1": {
             "os_config": "cfg1",
             "clients": {
                 "client1": {
                     "name": "client1",
                     "op_domain": "p1",
-                    "gr_domain": "gr",
+                    "zone_domain": "oz",
                     "user_cert": "./cert.pem",
                     "user_key": "./cert.pem",
-                    "mounting_path": "/home/u1/onedata",
-                    "token_for": "u1"
+                    "mounting_path": "/home/user1/onedata_cl1",
+                    "token_for": "user1"
                 },
                 "client2": {
                     "name": "client2",
                     "op_domain": "p1",
-                    "gr_domain": "gr",
+                    "zone_domain": "oz",
                     "user_cert": "./cert.pem",
                     "user_key": "./cert.pem",
-                    "mounting_path": "/home/u1/onedata",
-                    "token_for": "u1"
+                    "mounting_path": "/home/user1/onedata_cl2",
+                    "token_for": "user1"
                 }
             }
         },
-        "client_host_2": {
-            "os_config": "cfg1",
+        "client-host2": {
+            "os_config": "cfg2",
             "clients": {
                 "client1": {
                     "name": "client1",
                     "op_domain": "p1",
-                    "gr_domain": "gr",
+                    "zone_domain": "oz",
                     "user_cert": "./cert.pem",
                     "user_key": "./cert.pem",
-                    "mounting_path": "/home/u1/onedata",
-                    "token_for": "u1"
+                    "mounting_path": "/home/user1/onedata",
+                    "token_for": "user1"
                 },
                 "client2": {
                     "name": "client2",
                     "op_domain": "p1",
-                    "gr_domain": "gr",
+                    "zone_domain": "oz",
                     "user_cert": "./cert.pem",
                     "user_key": "./cert.pem",
-                    "mounting_path": "/home/u2/onedata",
-                    "token_for": "u2"
+                    "mounting_path": "/home/user2/onedata",
+                    "token_for": "user2"
                 }
             }
         }
     },
-    "onepanel": {
-        "onepanel1": {
-            "vm.args": {
-                "name": "onepanel@onepanel1",
-                "setcookie": "cookie7"
-            },
-            "sys.config": {
-                "multicast_address": {
-                    "string": "239.255.0.1"
-                }
-            }
-        },
-        "onepanel2": {
-            "vm.args": {
-                "name": "onepanel@onepanel2",
-                "setcookie": "cookie7"
-            },
-            "sys.config": {
-                "multicast_address": {
-                    "string": "239.255.0.1"
+    "onepanel_domains": {
+        "p5": {
+            "release": "onepanel",
+            "onepanel": {
+                "node1": {
+                    "vm.args": {
+                        "setcookie": "cookie7"
+                    },
+                    "sys.config": {
+                        "onepanel": {}
+                    }
+                },
+                "node2": {
+                    "vm.args": {
+                        "setcookie": "cookie7"
+                    },
+                    "sys.config": {
+                        "onepanel": {}
+                    }
                 }
             }
         }

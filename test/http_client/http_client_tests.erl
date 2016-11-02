@@ -40,7 +40,7 @@ api_t() ->
     Parsed_HTTP_URL = hackney_url:parse_url(HTTP_URL),
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
-    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_ssl2_transport},
+    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
     Headers = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
 
@@ -235,7 +235,7 @@ request_return_stream_t() ->
     Parsed_HTTP_URL = hackney_url:parse_url(HTTP_URL),
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
-    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_ssl2_transport},
+    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
     Headers = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
 
