@@ -48,7 +48,7 @@ patch | purge. %% RFC-5789
 % Request options
 -type opts() :: [opt()].
 % Response
--type response() :: Response :: response().
+-type response() :: {ok, code(), headers(), body()} | {error, term()}.
 
 % All possible request options
 -type opt() ::
