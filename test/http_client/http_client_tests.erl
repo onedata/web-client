@@ -147,7 +147,7 @@ api_t() ->
         post,
         [HTTPS_URL, Headers, Body, [insecure]],
         [post, Parsed_HTTPS_URL, Headers, Body, [
-            {connect_options, []},
+            {connect_options, [{verify_type, verify_none}]},
             with_body,
             {max_body, undefined},
             {pool, false}
@@ -163,7 +163,9 @@ api_t() ->
             {max_body, 987665}
         ]],
         [get, Parsed_HTTPS_URL, Headers, Body, [
-            {connect_options, [{keyfile, "a"}, {certfile, "b"}]},
+            {connect_options, [
+                {keyfile, "a"}, {certfile, "b"}, {verify_type, verify_none}
+            ]},
             with_body,
             {max_body, 987665},
             {pool, false}
@@ -273,7 +275,7 @@ request_return_stream_t() ->
     Test6 = {
         [post, HTTPS_URL, Headers, Body, [insecure]],
         [post, Parsed_HTTPS_URL, Headers, Body, [
-            {connect_options, []},
+            {connect_options, [{verify_type, verify_none}]},
             async,
             {pool, false}
         ]]
@@ -286,7 +288,9 @@ request_return_stream_t() ->
             {ssl_options, [{keyfile, "a"}, {certfile, "b"}]}
         ]],
         [delete, Parsed_HTTPS_URL, Headers, Body, [
-            {connect_options, [{keyfile, "a"}, {certfile, "b"}]},
+            {connect_options, [
+                {keyfile, "a"}, {certfile, "b"}, {verify_type, verify_none}
+            ]},
             async,
             {pool, false}
         ]]

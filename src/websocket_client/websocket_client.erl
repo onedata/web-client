@@ -255,7 +255,7 @@ websocket_close(WSReq, HandlerState, Reason) ->
 -spec generate_ws_key() ->
     binary().
 generate_ws_key() ->
-    base64:encode(crypto:rand_bytes(16)).
+    base64:encode(crypto:strong_rand_bytes(16)).
 
 %% @doc Validate handshake response challenge
 -spec validate_handshake(HandshakeResponse :: binary(), Key :: binary()) -> {ok, binary()}.
@@ -444,7 +444,7 @@ encode_frame({Type, Payload}) ->
     Opcode = websocket_req:name_to_opcode(Type),
     Len = iolist_size(Payload),
     BinLen = payload_length_to_binary(Len),
-    MaskingKeyBin = crypto:rand_bytes(4),
+    MaskingKeyBin = crypto:strong_rand_bytes(4),
     <<MaskingKey:32>> = MaskingKeyBin,
     Header = <<1:1, 0:3, Opcode:4, 1:1, BinLen/bits, MaskingKeyBin/bits>>,
     MaskedPayload = mask_payload(MaskingKey, Payload),
