@@ -28,6 +28,7 @@
 %% @end
 %% ===================================================================
 -module(http_client).
+-author("Lukasz Opiola").
 
 -include_lib("hackney/include/hackney_lib.hrl").
 
