@@ -31,7 +31,6 @@ parse(Uri) ->
     #hackney_url{
         scheme = Scheme, host = Host, port = Port, path = Path, qs = QueryString
     } = hackney_url:parse_url(Uri),
-    http_client:request(patch, <<"a">>, [], <<"">>, [insecure]),
     #{
         scheme => Scheme,
         host => list_to_binary(Host),
