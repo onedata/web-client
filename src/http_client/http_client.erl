@@ -336,7 +336,7 @@ request(Method, URL, Headers, Body, Opts) ->
     % its length.
     MaxBody = proplists:get_value(max_body, Opts, undefined),
     % with_body option forces hackney to always return the body
-    Opts2 = [with_body | lists:keystore(max_body, 1, Opts, {max_body, MaxBody})],
+    Opts2 = [with_body | store_option({max_body, MaxBody}, Opts)],
     do_request(Method, URL, Headers, Body, Opts2).
 
 
@@ -358,6 +358,7 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
 %% ====================================================================
 
 %--------------------------------------------------------------------
+%% @private
 %% @doc
 %% Calls hackney to perform a HTTP request.
 %% @end
@@ -400,25 +401,40 @@ do_request(Method, URL, Headers, Body, Opts) ->
 
 
 %%--------------------------------------------------------------------
+%% @private
 %% @doc
 %% Prepares options for hackney. Analyses ssl_options passed in Opts list
 %% and transfors them in connect_opts, which will be fed to etls:connect.
 %% @end
 %%--------------------------------------------------------------------
--spec prepare_ssl_opts(Opts :: opts()) -> Opts :: opts().
+-spec prepare_ssl_opts(Opts :: hackney_opts()) -> Opts :: hackney_opts().
 prepare_ssl_opts(Opts) ->
     SSLOpts = proplists:get_value(ssl_options, Opts, []),
-    ConnectOpts = case lists:member(insecure, Opts) of
+    ConnectOpts = case proplists:get_value(insecure, Opts) of
         true ->
-            lists:keystore(verify_type, 1, SSLOpts, {verify_type, verify_none});
-        false ->
-            case lists:keyfind(verify_type, 1, SSLOpts) of
-                false ->
-                    lists:keystore(verify_type, 1, SSLOpts, {verify_type, verify_peer});
+            % Always overwrite verify_type so that insecure is forced
+            store_option({verify_type, verify_none}, SSLOpts);
+        undefined ->
+            % If verify_type is present, do not overwrite it
+            case proplists:get_value(verify_type, SSLOpts) of
+                undefined ->
+                    store_option({verify_type, verify_peer}, SSLOpts);
                 _ ->
                     SSLOpts
             end
     end,
-    Opts2 = lists:delete(insecure, Opts),
-    Opts3 = lists:keydelete(ssl_options, 1, Opts2),
+    Opts2 = proplists:delete(insecure, Opts),
+    Opts3 = proplists:delete(ssl_options, Opts2),
     [{connect_options, ConnectOpts} | Opts3].
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Ensures that given option is present in options list
+%% (adds it or overwrites the old value if present).
+%% @end
+%%--------------------------------------------------------------------
+-spec store_option(Opt :: {atom(), term()}, hackney_opts()) -> hackney_opts().
+store_option({Key, _Value} = Opt, Opts) ->
+    [Opt | proplists:delete(Key, Opts)].
