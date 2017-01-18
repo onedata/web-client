@@ -316,7 +316,7 @@ compare_args(Actual, Expected) ->
     [EMthd, EURL, EHdrs, EBd, EOpts] = Expected,
     ?assertEqual(AMthd, EMthd),
     ?assertEqual(AURL, EURL),
-    compare_proplists(AHdrs, EHdrs),
+    ?assertEqual(AHdrs, EHdrs),
     ?assertEqual(ABd, EBd),
     compare_proplists(AOpts, EOpts).
 
