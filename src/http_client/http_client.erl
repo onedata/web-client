@@ -391,13 +391,19 @@ do_request(Method, URL, Headers, Body, Opts) ->
     % @todo   and hackney calls some callback from default one
     % @todo maybe its etls problem
     Opts3 = [{pool, false} | Opts2],
-    HeadersProplist = maps:from_list(Headers),
-    case hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3) of
+    HeadersProplist = maps:to_list(Headers),
+    Result = case hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3) of
         {error, closed} ->
             % If {error, closed} appears, retry once.
             hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3);
         Result ->
             Result
+    end,
+    case Result of
+        {ok, Code, HeadersProps, Body} ->
+            {ok, Code, maps:from_list(HeadersProps), Body};
+        Other ->
+            Other
     end.
 
 

@@ -41,7 +41,7 @@ api_t() ->
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
     Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
-    Headers = [{<<"key">>, <<"value">>}],
+    Headers = #{<<"key">> => <<"value">>},
     Body = <<"body">>,
 
     % Specify some tests in tuples(3)
@@ -66,7 +66,7 @@ api_t() ->
     Test2 = {
         delete,
         [HTTP_URL],
-        [delete, Parsed_HTTP_URL, [], <<>>, [
+        [delete, Parsed_HTTP_URL, #{}, <<>>, [
             with_body,
             {max_body, undefined},
             {pool, false}
@@ -179,9 +179,9 @@ api_t() ->
                 fun(AMthd, AURL, AHdrs, ABd, AOpts) ->
                     % If args are not as expected, the test will fail here
                     compare_args([AMthd, AURL, AHdrs, ABd, AOpts], Expected),
-                    {ok, 200, [], <<>>}
+                    {ok, 200, #{}, <<>>}
                 end),
-            ?assertEqual({ok, 200, [], <<>>}, erlang:apply(http_client, Method, Args))
+            ?assertEqual({ok, 200, #{}, <<>>}, erlang:apply(http_client, Method, Args))
         end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7, Test8]),
     ?assert(meck:validate(hackney)).
 
@@ -195,7 +195,7 @@ request_return_stream_t() ->
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
     Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
-    Headers = [{<<"key">>, <<"value">>}],
+    Headers = #{<<"key">> => <<"value">>},
     Body = <<"body">>,
 
     % Specify some tests in tuples(2).
