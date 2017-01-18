@@ -443,8 +443,8 @@ do_request(Method, URL, Headers, Body, Opts) ->
             OkResult
     end,
     case Result of
-        {ok, Code, HeadersProps, Body} ->
-            {ok, Code, maps:from_list(HeadersProps), Body};
+        {ok, RespCode, RespHeaders, RespBody} ->
+            {ok, RespCode, maps:from_list(RespHeaders), RespBody};
         Other ->
             Other
     end.

@@ -41,7 +41,8 @@ api_t() ->
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
     Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
-    Headers = #{<<"key">> => <<"value">>},
+    HeadersMap = #{<<"key">> => <<"value">>},
+    HeadersProplist = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
 
     % Specify some tests in tuples(3)
@@ -54,8 +55,8 @@ api_t() ->
     % 1. test: HTTP request
     Test1 = {
         get,
-        [HTTP_URL, Headers, Body],
-        [get, Parsed_HTTP_URL, Headers, Body, [
+        [HTTP_URL, HeadersMap, Body],
+        [get, Parsed_HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, undefined},
             {pool, false}
@@ -66,7 +67,7 @@ api_t() ->
     Test2 = {
         delete,
         [HTTP_URL],
-        [delete, Parsed_HTTP_URL, #{}, <<>>, [
+        [delete, Parsed_HTTP_URL, [], <<>>, [
             with_body,
             {max_body, undefined},
             {pool, false}
@@ -76,10 +77,10 @@ api_t() ->
     % 3. test: HTTP request
     Test3 = {
         request,
-        [get, HTTP_URL, Headers, Body, [
+        [get, HTTP_URL, HeadersMap, Body, [
             {max_body, 12123}
         ]],
-        [get, Parsed_HTTP_URL, Headers, Body, [
+        [get, Parsed_HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, 12123},
             {pool, false}
@@ -89,8 +90,8 @@ api_t() ->
     % 4. test: HTTPS request
     Test4 = {
         post,
-        [HTTPS_URL, Headers],
-        [post, Parsed_HTTPS_URL, Headers, <<>>, [
+        [HTTPS_URL, HeadersMap],
+        [post, Parsed_HTTPS_URL, HeadersProplist, <<>>, [
             {connect_options, [{verify_type, verify_peer}]},
             with_body,
             {max_body, undefined},
@@ -101,13 +102,13 @@ api_t() ->
     % 5. test: HTTPS request with some ssl options
     Test5 = {
         post,
-        [HTTPS_URL, Headers, Body, [
+        [HTTPS_URL, HeadersMap, Body, [
             option,
             {ssl_options, [
                 {keyfile, "a"}, {certfile, "b"}
             ]}
         ]],
-        [post, Parsed_HTTPS_URL, Headers, Body, [
+        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
             option,
             {connect_options, [
                 {verify_type, verify_peer},
@@ -123,14 +124,14 @@ api_t() ->
     % 6. test: HTTPS request with some ssl options overriding verify_type
     Test6 = {
         put,
-        [HTTPS_URL, Headers, Body, [
+        [HTTPS_URL, HeadersMap, Body, [
             {ssl_options, [
                 {verify_type, verify_none},
                 {keyfile, "a"},
                 {certfile, "b"}
             ]}
         ]],
-        [put, Parsed_HTTPS_URL, Headers, Body, [
+        [put, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [
                 {verify_type, verify_none},
                 {keyfile, "a"},
@@ -145,8 +146,8 @@ api_t() ->
     % 7. test: insecure HTTPS request
     Test7 = {
         post,
-        [HTTPS_URL, Headers, Body, [insecure]],
-        [post, Parsed_HTTPS_URL, Headers, Body, [
+        [HTTPS_URL, HeadersMap, Body, [insecure]],
+        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [{verify_type, verify_none}]},
             with_body,
             {max_body, undefined},
@@ -157,12 +158,12 @@ api_t() ->
     % 8. test: insecure HTTPS request with some ssl options
     Test8 = {
         get,
-        [HTTPS_URL, Headers, Body, [
+        [HTTPS_URL, HeadersMap, Body, [
             insecure,
             {ssl_options, [{keyfile, "a"}, {certfile, "b"}]},
             {max_body, 987665}
         ]],
-        [get, Parsed_HTTPS_URL, Headers, Body, [
+        [get, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [
                 {keyfile, "a"}, {certfile, "b"}, {verify_type, verify_none}
             ]},
@@ -179,7 +180,7 @@ api_t() ->
                 fun(AMthd, AURL, AHdrs, ABd, AOpts) ->
                     % If args are not as expected, the test will fail here
                     compare_args([AMthd, AURL, AHdrs, ABd, AOpts], Expected),
-                    {ok, 200, #{}, <<>>}
+                    {ok, 200, [], <<>>}
                 end),
             ?assertEqual({ok, 200, #{}, <<>>}, erlang:apply(http_client, Method, Args))
         end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7, Test8]),
@@ -195,7 +196,8 @@ request_return_stream_t() ->
     % If the URL is https, change the transport as in http_client
     HTTPS_U = hackney_url:parse_url(HTTPS_URL),
     Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_etls_transport},
-    Headers = #{<<"key">> => <<"value">>},
+    HeadersMap = #{<<"key">> => <<"value">>},
+    HeadersProplist = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
 
     % Specify some tests in tuples(2).
@@ -207,8 +209,8 @@ request_return_stream_t() ->
 
     % 1. test: HTTP request
     Test1 = {
-        [post, HTTP_URL, Headers, Body, []],
-        [post, Parsed_HTTP_URL, Headers, Body, [
+        [post, HTTP_URL, HeadersMap, Body, []],
+        [post, Parsed_HTTP_URL, HeadersProplist, Body, [
             async,
             {pool, false}
         ]]
@@ -216,14 +218,14 @@ request_return_stream_t() ->
 
     % 2. test: HTTP request
     Test2 = {
-        [delete, HTTP_URL, Headers, Body, [option]],
-        [delete, Parsed_HTTP_URL, Headers, Body, [async, option, {pool, false}]]
+        [delete, HTTP_URL, HeadersMap, Body, [option]],
+        [delete, Parsed_HTTP_URL, HeadersProplist, Body, [async, option, {pool, false}]]
     },
 
     % 3. test: HTTPS request
     Test3 = {
-        [get, HTTPS_URL, Headers, Body, [option]],
-        [get, Parsed_HTTPS_URL, Headers, Body, [
+        [get, HTTPS_URL, HeadersMap, Body, [option]],
+        [get, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [{verify_type, verify_peer}]},
             async,
             option,
@@ -233,13 +235,13 @@ request_return_stream_t() ->
 
     % 4. test: HTTPS request with some ssl options
     Test4 = {
-        [put, HTTPS_URL, Headers, Body, [
+        [put, HTTPS_URL, HeadersMap, Body, [
             option,
             {ssl_options, [
                 {keyfile, "a"}, {certfile, "b"}
             ]}
         ]],
-        [put, Parsed_HTTPS_URL, Headers, Body, [
+        [put, Parsed_HTTPS_URL, HeadersProplist, Body, [
             option,
             {connect_options, [
                 {verify_type, verify_peer},
@@ -253,14 +255,14 @@ request_return_stream_t() ->
 
     % 5. test: HTTPS request with some ssl options overriding verify_type
     Test5 = {
-        [head, HTTPS_URL, Headers, Body, [
+        [head, HTTPS_URL, HeadersMap, Body, [
             {ssl_options, [
                 {verify_type, verify_none},
                 {keyfile, "a"},
                 {certfile, "b"}
             ]}
         ]],
-        [head, Parsed_HTTPS_URL, Headers, Body, [
+        [head, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [
                 {verify_type, verify_none},
                 {keyfile, "a"},
@@ -273,8 +275,8 @@ request_return_stream_t() ->
 
     % 6. test: insecure HTTPS request
     Test6 = {
-        [post, HTTPS_URL, Headers, Body, [insecure]],
-        [post, Parsed_HTTPS_URL, Headers, Body, [
+        [post, HTTPS_URL, HeadersMap, Body, [insecure]],
+        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [{verify_type, verify_none}]},
             async,
             {pool, false}
@@ -283,11 +285,11 @@ request_return_stream_t() ->
 
     % 7. test: insecure HTTPS request with some ssl options
     Test7 = {
-        [delete, HTTPS_URL, Headers, Body, [
+        [delete, HTTPS_URL, HeadersMap, Body, [
             insecure,
             {ssl_options, [{keyfile, "a"}, {certfile, "b"}]}
         ]],
-        [delete, Parsed_HTTPS_URL, Headers, Body, [
+        [delete, Parsed_HTTPS_URL, HeadersProplist, Body, [
             {connect_options, [
                 {keyfile, "a"}, {certfile, "b"}, {verify_type, verify_none}
             ]},
@@ -316,7 +318,7 @@ compare_args(Actual, Expected) ->
     [EMthd, EURL, EHdrs, EBd, EOpts] = Expected,
     ?assertEqual(AMthd, EMthd),
     ?assertEqual(AURL, EURL),
-    ?assertEqual(AHdrs, EHdrs),
+    compare_proplists(AHdrs, EHdrs),
     ?assertEqual(ABd, EBd),
     compare_proplists(AOpts, EOpts).
 
