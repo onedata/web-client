@@ -439,8 +439,8 @@ do_request(Method, URL, Headers, Body, Opts) ->
         {error, closed} ->
             % If {error, closed} appears, retry once.
             hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3);
-        Result ->
-            Result
+        OkResult ->
+            OkResult
     end,
     case Result of
         {ok, Code, HeadersProps, Body} ->
