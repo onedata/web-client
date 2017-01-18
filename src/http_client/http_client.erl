@@ -41,7 +41,7 @@ patch | purge. %% RFC-5789
 % Request URL
 -type url() :: string() | binary().
 % Request / response headers
--type headers() :: [{Key :: string() | binary(), Value :: string() | binary()}].
+-type headers() :: #{Key :: binary() => Value :: binary()}.
 % Request / response body
 -type body() :: string() | binary().
 % Response code
@@ -391,10 +391,11 @@ do_request(Method, URL, Headers, Body, Opts) ->
     % @todo   and hackney calls some callback from default one
     % @todo maybe its etls problem
     Opts3 = [{pool, false} | Opts2],
-    case hackney:request(Method, HcknURL2, Headers, Body, Opts3) of
+    HeadersProplist = maps:from_list(Headers),
+    case hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3) of
         {error, closed} ->
             % If {error, closed} appears, retry once.
-            hackney:request(Method, HcknURL2, Headers, Body, Opts3);
+            hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3);
         Result ->
             Result
     end.
