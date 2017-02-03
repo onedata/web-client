@@ -41,7 +41,7 @@ patch | purge. %% RFC-5789
 % Request URL
 -type url() :: string() | binary().
 % Request / response headers
--type headers() :: [{Key :: string() | binary(), Value :: string() | binary()}].
+-type headers() :: #{Key :: binary() => Value :: binary()}.
 % Request / response body
 -type body() :: string() | binary().
 % Response code
@@ -98,6 +98,7 @@ binary() |
 -export([get/1, get/2, get/3, get/4]).
 -export([post/1, post/2, post/3, post/4]).
 -export([put/1, put/2, put/3, put/4]).
+-export([patch/1, patch/2, patch/3, patch/4]).
 -export([delete/1, delete/2, delete/3, delete/4]).
 -export([request/1, request/2, request/3, request/4]).
 % Performs the request
@@ -120,7 +121,7 @@ binary() |
 %%--------------------------------------------------------------------
 -spec get(URL :: url()) -> Response :: response().
 get(URL) ->
-    request(get, URL, [], <<>>, []).
+    request(get, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -162,7 +163,7 @@ get(URL, Headers, Body, Opts) ->
 %%--------------------------------------------------------------------
 -spec post(URL :: url()) -> Response :: response().
 post(URL) ->
-    request(post, URL, [], <<>>, []).
+    request(post, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -204,7 +205,7 @@ post(URL, Headers, Body, Opts) ->
 %%--------------------------------------------------------------------
 -spec put(URL :: url()) -> Response :: response().
 put(URL) ->
-    request(put, URL, [], <<>>, []).
+    request(put, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -241,12 +242,54 @@ put(URL, Headers, Body, Opts) ->
 
 %%--------------------------------------------------------------------
 %% @doc
+%% Performs a HTTP PATCH request.
+%% @end
+%%--------------------------------------------------------------------
+-spec patch(URL :: url()) -> Response :: response().
+patch(URL) ->
+    request(patch, URL, #{}, <<>>, []).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Performs a HTTP PATCH request.
+%% @end
+%%--------------------------------------------------------------------
+-spec patch(URL :: url(), Headers :: headers()) -> Response :: response().
+patch(URL, Headers) ->
+    request(patch, URL, Headers, <<>>, []).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Performs a HTTP PATCH request.
+%% @end
+%%--------------------------------------------------------------------
+-spec patch(URL :: url(), Headers :: headers(), Body :: body()) ->
+    Response :: response().
+patch(URL, Headers, Body) ->
+    request(patch, URL, Headers, Body, []).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Performs a HTTP PATCH request.
+%% @end
+%%--------------------------------------------------------------------
+-spec patch(URL :: url(), Headers :: headers(), Body :: body(), Opts :: opts()) ->
+    Response :: response().
+patch(URL, Headers, Body, Opts) ->
+    request(patch, URL, Headers, Body, Opts).
+
+
+%%--------------------------------------------------------------------
+%% @doc
 %% Performs a HTTP DELETE request.
 %% @end
 %%--------------------------------------------------------------------
 -spec delete(URL :: url()) -> Response :: response().
 delete(URL) ->
-    request(delete, URL, [], <<>>, []).
+    request(delete, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -288,7 +331,7 @@ delete(URL, Headers, Body, Opts) ->
 %%--------------------------------------------------------------------
 -spec request(URL :: url()) -> Response :: response().
 request(URL) ->
-    request(get, URL, [], <<>>, []).
+    request(get, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -298,7 +341,7 @@ request(URL) ->
 %%--------------------------------------------------------------------
 -spec request(Method :: method(), URL :: url()) -> Response :: response().
 request(Method, URL) ->
-    request(Method, URL, [], <<>>, []).
+    request(Method, URL, #{}, <<>>, []).
 
 
 %%--------------------------------------------------------------------
@@ -391,12 +434,19 @@ do_request(Method, URL, Headers, Body, Opts) ->
     % @todo   and hackney calls some callback from default one
     % @todo maybe its etls problem
     Opts3 = [{pool, false} | Opts2],
-    case hackney:request(Method, HcknURL2, Headers, Body, Opts3) of
+    HeadersProplist = maps:to_list(Headers),
+    Result = case hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3) of
         {error, closed} ->
             % If {error, closed} appears, retry once.
-            hackney:request(Method, HcknURL2, Headers, Body, Opts3);
-        Result ->
-            Result
+            hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3);
+        OkResult ->
+            OkResult
+    end,
+    case Result of
+        {ok, RespCode, RespHeaders, RespBody} ->
+            {ok, RespCode, maps:from_list(RespHeaders), RespBody};
+        Other ->
+            Other
     end.
 
 
