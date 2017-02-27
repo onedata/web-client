@@ -53,6 +53,9 @@ patch | purge. %% RFC-5789
 
 % All possible request options
 -type opt() ::
+%% allows to specify which SSL client library should be used for request,
+%% default is etls
+{ssl_lib, erlang | etls} |
 %% to perform a https request without verifying the server cert
 insecure |
 %% to pass ssl options to etls
@@ -408,23 +411,27 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
 %%--------------------------------------------------------------------
 -spec do_request(Method :: method(), URL :: url(),
     Headers :: headers(), Body :: body(), Opts :: hackney_opts()) ->
-    Response :: response() | {ok, StrmRef :: term()}.
+    Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
-    HcknURL = hackney_url:parse_url(URL),
-    {HcknURL2, Opts2} =
-        case HcknURL#hackney_url.transport of
-            hackney_ssl_transport ->
-                % Use etls for HTTPS connections
-                {
-                    HcknURL#hackney_url{transport = hackney_etls_transport},
-                    prepare_ssl_opts(Opts)
-                };
-            _ ->
-                {
-                    HcknURL,
-                    Opts
-                }
-        end,
+    HackneyUrl = hackney_url:parse_url(URL),
+    SslLib = proplists:get_value(ssl_lib, Opts, etls),
+    % Depending on selected ssl_lib, set proper options
+    % (applicable only to HTTPS requests)
+    {HackneyUrl2, Opts2} = case {HackneyUrl#hackney_url.transport, SslLib} of
+        {hackney_ssl_transport, etls} ->
+            % Use etls for HTTPS connections
+            {
+                HackneyUrl#hackney_url{transport = hackney_etls_transport},
+                prepare_etls_opts(Opts)
+            };
+        _ ->
+            % Otherwise, just use default hackney behaviour
+            % (HTTP and HTTPS with erlang SSL)
+            {
+                HackneyUrl,
+                Opts
+            }
+    end,
     % Do not use hackney pools = new connection every request.
     % When hackney uses socket pools, sometimes it grabs a
     % disconnected socket and returns {error, closed}.
@@ -433,12 +440,12 @@ do_request(Method, URL, Headers, Body, Opts) ->
     % @todo maybe it is connected with using custom transport
     % @todo   and hackney calls some callback from default one
     % @todo maybe its etls problem
-    Opts3 = [{pool, false} | Opts2],
+    Opts3 = [{pool, false} | proplists:delete(ssl_lib, Opts2)],
     HeadersProplist = maps:to_list(Headers),
-    Result = case hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3) of
+    Result = case hackney:request(Method, HackneyUrl2, HeadersProplist, Body, Opts3) of
         {error, closed} ->
             % If {error, closed} appears, retry once.
-            hackney:request(Method, HcknURL2, HeadersProplist, Body, Opts3);
+            hackney:request(Method, HackneyUrl2, HeadersProplist, Body, Opts3);
         OkResult ->
             OkResult
     end,
@@ -454,11 +461,11 @@ do_request(Method, URL, Headers, Body, Opts) ->
 %% @private
 %% @doc
 %% Prepares options for hackney. Analyses ssl_options passed in Opts list
-%% and transfors them in connect_opts, which will be fed to etls:connect.
+%% and transforms them into connect_opts, which will be fed to etls:connect.
 %% @end
 %%--------------------------------------------------------------------
--spec prepare_ssl_opts(Opts :: hackney_opts()) -> Opts :: hackney_opts().
-prepare_ssl_opts(Opts) ->
+-spec prepare_etls_opts(Opts :: hackney_opts()) -> Opts :: hackney_opts().
+prepare_etls_opts(Opts) ->
     SSLOpts = proplists:get_value(ssl_options, Opts, []),
     ConnectOpts = case proplists:get_value(insecure, Opts) of
         true ->
