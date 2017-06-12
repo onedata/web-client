@@ -4,9 +4,11 @@
         {vsn, "1.0.1"},
         {registered, []},
         {applications, [
-            etls,
-            hackney,
-            crypto
+            crypto,
+            asn1,
+            public_key,
+            ssl,
+            hackney
         ]},
         {env, []}
     ]

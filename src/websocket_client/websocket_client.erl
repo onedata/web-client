@@ -63,13 +63,13 @@ cast(Client, Frame) ->
 ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
     Transport = case Protocol of
                     wss ->
-                        etls;
+                        ssl;
                     ws ->
                         gen_tcp
                 end,
     SockReply = case Transport of
-                    etls ->
-                        etls:connect(Host, Port, TransportOpts ++ [
+                    ssl ->
+                        ssl:connect(Host, Port, TransportOpts ++ [
                             {active, false},
                             {packet, 0}
                         ], 6000);
@@ -106,12 +106,12 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
                                                 {ok, HS, KA}
                                         end,
         case Transport of
-            etls ->
-                etls:setopts(Socket, [{active, true}]);
+            ssl ->
+                ssl:setopts(Socket, [{active, true}]);
             gen_tcp ->
                 inet:setopts(Socket, [{active, true}])
         end,
-        %% Since we could have already received some data already, we simulate a Socket message.
+        %% Since we could have received some data already, we simulate a Socket message.
         case Buffer of
             <<>> -> ok;
             _ -> self() ! {Transport, Socket, Buffer}

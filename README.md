@@ -1,7 +1,7 @@
 # web-client
 *web-client* is an erlang library including HTTP and WebSocket client.
 
-The HTTP client is a wrapper of [hackney](https://github.com/benoitc/hackney) library. The difference is that [etls](https://github.com/onedata/erlang-tls) is used for underlying transport for HTTPS requests and for server certificate verification againts system's CA bundle.
+The HTTP client is a wrapper of [hackney](https://github.com/benoitc/hackney) library.
 
 The WebSocket client is a modification of [websocket_client](https://github.com/jeremyong/websocket_client).
 

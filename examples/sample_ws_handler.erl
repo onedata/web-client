@@ -51,7 +51,7 @@
 %%--------------------------------------------------------------------
 start_link() ->
     crypto:start(),
-    application:start(etls),
+    ssl:start(),
     websocket_client:start_link("wss://echo.websocket.org", ?MODULE, []).
 
 

@@ -53,13 +53,12 @@ patch | purge. %% RFC-5789
 
 % All possible request options
 -type opt() ::
-%% allows to specify which SSL client library should be used for request,
-%% default is etls
-{ssl_lib, erlang | etls} |
 %% to perform a https request without verifying the server cert
 insecure |
-%% to pass ssl options to etls
-{ssl_options, [term()]} |
+%% to pass tcp options
+{connect_options, [gen_tcp:option()]} |
+%% to pass ssl options
+{ssl_options, [ssl:ssl_option()]} |
 %% Specifying maximum body length that can be automatically returned
 %% from request. By default, whole body is returned regardless of its size.
 %% NOTE: in case of a large body, function request_return_stream/5
@@ -414,76 +413,13 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
     Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
     HackneyUrl = hackney_url:parse_url(URL),
-    SslLib = proplists:get_value(ssl_lib, Opts, etls),
-    % Depending on selected ssl_lib, set proper options
-    % (applicable only to HTTPS requests)
-    {HackneyUrl2, Opts2} = case {HackneyUrl#hackney_url.transport, SslLib} of
-        {hackney_ssl_transport, etls} ->
-            % Use etls for HTTPS connections
-            {
-                HackneyUrl#hackney_url{transport = hackney_etls_transport},
-                prepare_etls_opts(Opts)
-            };
-        _ ->
-            % Otherwise, just use default hackney behaviour
-            % (HTTP and HTTPS with erlang SSL)
-            {
-                HackneyUrl,
-                Opts
-            }
-    end,
-    % Do not use hackney pools = new connection every request.
-    % When hackney uses socket pools, sometimes it grabs a
-    % disconnected socket and returns {error, closed}.
-    % Sometimes, etls returns {error, 'UNEXPECTED_RECORD'}.
-    % @todo check why and when this happens
-    % @todo maybe it is connected with using custom transport
-    % @todo   and hackney calls some callback from default one
-    % @todo maybe its etls problem
-    Opts3 = [{pool, false} | proplists:delete(ssl_lib, Opts2)],
     HeadersProplist = maps:to_list(Headers),
-    Result = case hackney:request(Method, HackneyUrl2, HeadersProplist, Body, Opts3) of
-        {error, closed} ->
-            % If {error, closed} appears, retry once.
-            hackney:request(Method, HackneyUrl2, HeadersProplist, Body, Opts3);
-        OkResult ->
-            OkResult
-    end,
-    case Result of
+    case hackney:request(Method, HackneyUrl, HeadersProplist, Body, Opts) of
         {ok, RespCode, RespHeaders, RespBody} ->
             {ok, RespCode, maps:from_list(RespHeaders), RespBody};
         Other ->
             Other
     end.
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Prepares options for hackney. Analyses ssl_options passed in Opts list
-%% and transforms them into connect_opts, which will be fed to etls:connect.
-%% @end
-%%--------------------------------------------------------------------
--spec prepare_etls_opts(Opts :: hackney_opts()) -> Opts :: hackney_opts().
-prepare_etls_opts(Opts) ->
-    SSLOpts = proplists:get_value(ssl_options, Opts, []),
-    ConnectOpts = case proplists:get_value(insecure, Opts) of
-        true ->
-            % Always overwrite verify_type so that insecure is forced
-            store_option({verify_type, verify_none}, SSLOpts);
-        undefined ->
-            % If verify_type is present, do not overwrite it
-            case proplists:get_value(verify_type, SSLOpts) of
-                undefined ->
-                    store_option({verify_type, verify_peer}, SSLOpts);
-                _ ->
-                    SSLOpts
-            end
-    end,
-    Opts2 = proplists:delete(insecure, Opts),
-    Opts3 = proplists:delete(ssl_options, Opts2),
-    [{connect_options, ConnectOpts} | Opts3].
-
 
 %%--------------------------------------------------------------------
 %% @private
