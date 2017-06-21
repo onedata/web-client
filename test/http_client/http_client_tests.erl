@@ -37,10 +37,6 @@ api_t() ->
     % Some test values
     HTTP_URL = <<"http://test.url">>,
     HTTPS_URL = <<"https://test.url">>,
-    Parsed_HTTP_URL = hackney_url:parse_url(HTTP_URL),
-    % If the URL is https, change the transport as in http_client
-    HTTPS_U = hackney_url:parse_url(HTTPS_URL),
-    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_ssl_transport},
     HeadersMap = #{<<"key">> => <<"value">>},
     HeadersProplist = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
@@ -56,7 +52,7 @@ api_t() ->
     Test1 = {
         get,
         [HTTP_URL, HeadersMap, Body],
-        [get, Parsed_HTTP_URL, HeadersProplist, Body, [
+        [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, undefined}
         ]]
@@ -66,7 +62,7 @@ api_t() ->
     Test2 = {
         delete,
         [HTTP_URL],
-        [delete, Parsed_HTTP_URL, [], <<>>, [
+        [delete, HTTP_URL, [], <<>>, [
             with_body,
             {max_body, undefined}
         ]]
@@ -78,7 +74,7 @@ api_t() ->
         [get, HTTP_URL, HeadersMap, Body, [
             {max_body, 12123}
         ]],
-        [get, Parsed_HTTP_URL, HeadersProplist, Body, [
+        [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, 12123}
         ]]
@@ -88,7 +84,7 @@ api_t() ->
     Test4 = {
         post,
         [HTTPS_URL, HeadersMap],
-        [post, Parsed_HTTPS_URL, HeadersProplist, <<>>, [
+        [post, HTTPS_URL, HeadersProplist, <<>>, [
             with_body,
             {max_body, undefined}
         ]]
@@ -103,7 +99,7 @@ api_t() ->
                 {keyfile, "a"}, {certfile, "b"}
             ]}
         ]],
-        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [post, HTTPS_URL, HeadersProplist, Body, [
             option,
             {ssl_options, [
                 {keyfile, "a"}, {certfile, "b"}
@@ -123,7 +119,7 @@ api_t() ->
                 {certfile, "b"}
             ]}
         ]],
-        [put, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [put, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
                 {verify, verify_none},
                 {keyfile, "a"},
@@ -138,7 +134,7 @@ api_t() ->
     Test7 = {
         post,
         [HTTPS_URL, HeadersMap, Body, [insecure]],
-        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [post, HTTPS_URL, HeadersProplist, Body, [
             insecure,
             with_body,
             {max_body, undefined}
@@ -153,7 +149,7 @@ api_t() ->
             {ssl_options, [{keyfile, "a"}, {certfile, "b"}]},
             {max_body, 987665}
         ]],
-        [get, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [get, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
                 {keyfile, "a"}, {certfile, "b"}
             ]},
@@ -182,10 +178,6 @@ request_return_stream_t() ->
     % Some test values
     HTTP_URL = <<"http://test.url">>,
     HTTPS_URL = <<"https://test.url">>,
-    Parsed_HTTP_URL = hackney_url:parse_url(HTTP_URL),
-    % If the URL is https, change the transport as in http_client
-    HTTPS_U = hackney_url:parse_url(HTTPS_URL),
-    Parsed_HTTPS_URL = HTTPS_U#hackney_url{transport = hackney_ssl_transport},
     HeadersMap = #{<<"key">> => <<"value">>},
     HeadersProplist = [{<<"key">>, <<"value">>}],
     Body = <<"body">>,
@@ -200,7 +192,7 @@ request_return_stream_t() ->
     % 1. test: HTTP request
     Test1 = {
         [post, HTTP_URL, HeadersMap, Body, []],
-        [post, Parsed_HTTP_URL, HeadersProplist, Body, [
+        [post, HTTP_URL, HeadersProplist, Body, [
             async
         ]]
     },
@@ -208,13 +200,13 @@ request_return_stream_t() ->
     % 2. test: HTTP request
     Test2 = {
         [delete, HTTP_URL, HeadersMap, Body, [option]],
-        [delete, Parsed_HTTP_URL, HeadersProplist, Body, [async, option]]
+        [delete, HTTP_URL, HeadersProplist, Body, [async, option]]
     },
 
     % 3. test: HTTPS request
     Test3 = {
         [get, HTTPS_URL, HeadersMap, Body, [option]],
-        [get, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [get, HTTPS_URL, HeadersProplist, Body, [
             async,
             option
         ]]
@@ -228,7 +220,7 @@ request_return_stream_t() ->
                 {keyfile, "a"}, {certfile, "b"}
             ]}
         ]],
-        [put, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [put, HTTPS_URL, HeadersProplist, Body, [
             option,
             {ssl_options, [
                 {keyfile, "a"},
@@ -247,7 +239,7 @@ request_return_stream_t() ->
                 {certfile, "b"}
             ]}
         ]],
-        [head, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [head, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
                 {verify, verify_none},
                 {keyfile, "a"},
@@ -260,7 +252,7 @@ request_return_stream_t() ->
     % 6. test: insecure HTTPS request
     Test6 = {
         [post, HTTPS_URL, HeadersMap, Body, [insecure]],
-        [post, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [post, HTTPS_URL, HeadersProplist, Body, [
             insecure,
             async
         ]]
@@ -272,7 +264,7 @@ request_return_stream_t() ->
             insecure,
             {ssl_options, [{keyfile, "a"}, {certfile, "b"}]}
         ]],
-        [delete, Parsed_HTTPS_URL, HeadersProplist, Body, [
+        [delete, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
                 {keyfile, "a"}, {certfile, "b"}
             ]},

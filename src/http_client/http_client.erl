@@ -412,9 +412,8 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
     Headers :: headers(), Body :: body(), Opts :: hackney_opts()) ->
     Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
-    HackneyUrl = hackney_url:parse_url(URL),
     HeadersProplist = maps:to_list(Headers),
-    case hackney:request(Method, HackneyUrl, HeadersProplist, Body, Opts) of
+    case hackney:request(Method, URL, HeadersProplist, Body, Opts) of
         {ok, RespCode, RespHeaders, RespBody} ->
             {ok, RespCode, maps:from_list(RespHeaders), RespBody};
         Other ->
