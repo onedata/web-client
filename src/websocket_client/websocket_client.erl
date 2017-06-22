@@ -70,6 +70,7 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
     SockReply = case Transport of
                     ssl ->
                         ssl:connect(Host, Port, TransportOpts ++ [
+                            binary,
                             {active, false},
                             {packet, 0}
                         ], 6000);
