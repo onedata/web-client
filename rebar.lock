@@ -7,7 +7,6 @@
   {git,"git://github.com/ninenines/cowlib.git",
        {ref,"d544a494af4dbc810fc9c15eaf5cc050cced1501"}},
   1},
- {<<"etls">>,{pkg,<<"etls">>,<<"1.1.2">>},0},
  {<<"hackney">>,
   {git,"git://github.com/benoitc/hackney.git",
        {ref,"631be9bc9315ef8dcc9967609b00b802e02b06b3"}},
