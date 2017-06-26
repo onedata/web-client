@@ -413,7 +413,8 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
     Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
     HeadersProplist = maps:to_list(Headers),
-    case hackney:request(Method, URL, HeadersProplist, Body, Opts) of
+    Opts2 = [{pool, false} | Opts],
+    case hackney:request(Method, URL, HeadersProplist, Body, Opts2) of
         {ok, RespCode, RespHeaders, RespBody} ->
             {ok, RespCode, maps:from_list(RespHeaders), RespBody};
         Other ->

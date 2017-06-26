@@ -54,7 +54,8 @@ api_t() ->
         [HTTP_URL, HeadersMap, Body],
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -64,7 +65,8 @@ api_t() ->
         [HTTP_URL],
         [delete, HTTP_URL, [], <<>>, [
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -76,7 +78,8 @@ api_t() ->
         ]],
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
-            {max_body, 12123}
+            {max_body, 12123},
+            {pool, false}
         ]]
     },
 
@@ -86,7 +89,8 @@ api_t() ->
         [HTTPS_URL, HeadersMap],
         [post, HTTPS_URL, HeadersProplist, <<>>, [
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -105,7 +109,8 @@ api_t() ->
                 {keyfile, "a"}, {certfile, "b"}
             ]},
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -126,7 +131,8 @@ api_t() ->
                 {certfile, "b"}
             ]},
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -137,7 +143,8 @@ api_t() ->
         [post, HTTPS_URL, HeadersProplist, Body, [
             insecure,
             with_body,
-            {max_body, undefined}
+            {max_body, undefined},
+            {pool, false}
         ]]
     },
 
@@ -155,7 +162,8 @@ api_t() ->
             ]},
             insecure,
             with_body,
-            {max_body, 987665}
+            {max_body, 987665},
+            {pool, false}
         ]]
     },
 
@@ -193,14 +201,15 @@ request_return_stream_t() ->
     Test1 = {
         [post, HTTP_URL, HeadersMap, Body, []],
         [post, HTTP_URL, HeadersProplist, Body, [
-            async
+            async,
+            {pool, false}
         ]]
     },
 
     % 2. test: HTTP request
     Test2 = {
         [delete, HTTP_URL, HeadersMap, Body, [option]],
-        [delete, HTTP_URL, HeadersProplist, Body, [async, option]]
+        [delete, HTTP_URL, HeadersProplist, Body, [async, option, {pool, false}]]
     },
 
     % 3. test: HTTPS request
@@ -208,7 +217,8 @@ request_return_stream_t() ->
         [get, HTTPS_URL, HeadersMap, Body, [option]],
         [get, HTTPS_URL, HeadersProplist, Body, [
             async,
-            option
+            option,
+            {pool, false}
         ]]
     },
 
@@ -226,7 +236,8 @@ request_return_stream_t() ->
                 {keyfile, "a"},
                 {certfile, "b"}
             ]},
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -245,7 +256,8 @@ request_return_stream_t() ->
                 {keyfile, "a"},
                 {certfile, "b"}
             ]},
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -254,7 +266,8 @@ request_return_stream_t() ->
         [post, HTTPS_URL, HeadersMap, Body, [insecure]],
         [post, HTTPS_URL, HeadersProplist, Body, [
             insecure,
-            async
+            async,
+            {pool, false}
         ]]
     },
 
@@ -269,7 +282,8 @@ request_return_stream_t() ->
                 {keyfile, "a"}, {certfile, "b"}
             ]},
             insecure,
-            async
+            async,
+            {pool, false}
         ]]
     },
 
