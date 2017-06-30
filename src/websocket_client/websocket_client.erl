@@ -69,11 +69,13 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Args, TransportOpts) ->
                 end,
     SockReply = case Transport of
                     ssl ->
-                        ssl:connect(Host, Port, TransportOpts ++ [
+                        ExpandedOpts = transport_opts:expand_ssl_verify_cacert_opts(
+                            TransportOpts ++ [
                             binary,
                             {active, false},
                             {packet, 0}
-                        ], 6000);
+                        ]),
+                        ssl:connect(Host, Port, ExpandedOpts, 6000);
                     gen_tcp ->
                         gen_tcp:connect(Host, Port, TransportOpts ++ [
                             binary,

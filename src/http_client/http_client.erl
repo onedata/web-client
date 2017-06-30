@@ -109,7 +109,7 @@ binary() |
 -export([request_return_stream/5]).
 
 -export_type([method/0, url/0, headers/0, body/0, code/0,
-    opts/0, opt/0, proxy_opt/0, response/0]).
+    hackney_opts/0, opts/0, opt/0, proxy_opt/0, response/0]).
 
 
 %%%===================================================================
@@ -413,7 +413,7 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
     Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
     HeadersProplist = maps:to_list(Headers),
-    Opts2 = [{pool, false} | Opts],
+    Opts2 = transport_opts:expand_hackney_verify_cacert_opts([{pool, false} | Opts]),
     case hackney:request(Method, URL, HeadersProplist, Body, Opts2) of
         {ok, RespCode, RespHeaders, RespBody} ->
             {ok, RespCode, maps:from_list(RespHeaders), RespBody};
