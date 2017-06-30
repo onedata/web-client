@@ -55,7 +55,8 @@ api_t() ->
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -66,7 +67,8 @@ api_t() ->
         [delete, HTTP_URL, [], <<>>, [
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -79,7 +81,8 @@ api_t() ->
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, 12123},
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -90,7 +93,8 @@ api_t() ->
         [post, HTTPS_URL, HeadersProplist, <<>>, [
             with_body,
             {max_body, undefined},
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -106,7 +110,10 @@ api_t() ->
         [post, HTTPS_URL, HeadersProplist, Body, [
             option,
             {ssl_options, [
-                {keyfile, "a"}, {certfile, "b"}
+                {keyfile, "a"},
+                {certfile, "b"},
+                {verify, verify_peer},
+                {cacerts, certifi:cacerts()}
             ]},
             with_body,
             {max_body, undefined},
@@ -128,7 +135,8 @@ api_t() ->
             {ssl_options, [
                 {verify, verify_none},
                 {keyfile, "a"},
-                {certfile, "b"}
+                {certfile, "b"},
+                {cacerts, certifi:cacerts()}
             ]},
             with_body,
             {max_body, undefined},
@@ -202,14 +210,20 @@ request_return_stream_t() ->
         [post, HTTP_URL, HeadersMap, Body, []],
         [post, HTTP_URL, HeadersProplist, Body, [
             async,
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
     % 2. test: HTTP request
     Test2 = {
         [delete, HTTP_URL, HeadersMap, Body, [option]],
-        [delete, HTTP_URL, HeadersProplist, Body, [async, option, {pool, false}]]
+        [delete, HTTP_URL, HeadersProplist, Body, [
+            async,
+            option,
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+        ]]
     },
 
     % 3. test: HTTPS request
@@ -218,7 +232,8 @@ request_return_stream_t() ->
         [get, HTTPS_URL, HeadersProplist, Body, [
             async,
             option,
-            {pool, false}
+            {pool, false},
+            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -234,7 +249,9 @@ request_return_stream_t() ->
             option,
             {ssl_options, [
                 {keyfile, "a"},
-                {certfile, "b"}
+                {certfile, "b"},
+                {verify, verify_peer},
+                {cacerts, certifi:cacerts()}
             ]},
             async,
             {pool, false}
@@ -254,7 +271,8 @@ request_return_stream_t() ->
             {ssl_options, [
                 {verify, verify_none},
                 {keyfile, "a"},
-                {certfile, "b"}
+                {certfile, "b"},
+                {cacerts, certifi:cacerts()}
             ]},
             async,
             {pool, false}
