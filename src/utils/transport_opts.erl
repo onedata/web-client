@@ -55,7 +55,7 @@ expand_ssl_verify_cacert_opts(SslOpts) ->
 
     case Verify of
         undefined ->
-            [{verify, verify_peer}, {cacerts, CacertsWithBundle} | SslOptsWithoutCacertsAndVerify];
+            [{depth, 99}, {verify, verify_peer}, {cacerts, CacertsWithBundle} | SslOptsWithoutCacertsAndVerify];
         Verify ->
-            [{verify, Verify}, {cacerts, CacertsWithBundle} | SslOptsWithoutCacertsAndVerify]
+            [{depth, 99}, {verify, Verify}, {cacerts, CacertsWithBundle} | SslOptsWithoutCacertsAndVerify]
     end.
