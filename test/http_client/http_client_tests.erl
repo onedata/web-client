@@ -56,7 +56,7 @@ api_t() ->
             with_body,
             {max_body, undefined},
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -68,7 +68,7 @@ api_t() ->
             with_body,
             {max_body, undefined},
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -82,7 +82,7 @@ api_t() ->
             with_body,
             {max_body, 12123},
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -94,7 +94,7 @@ api_t() ->
             with_body,
             {max_body, undefined},
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -112,6 +112,7 @@ api_t() ->
             {ssl_options, [
                 {keyfile, "a"},
                 {certfile, "b"},
+                {depth, 99},
                 {verify, verify_peer},
                 {cacerts, certifi:cacerts()}
             ]},
@@ -133,6 +134,7 @@ api_t() ->
         ]],
         [put, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
+                {depth, 99},
                 {verify, verify_none},
                 {keyfile, "a"},
                 {certfile, "b"},
@@ -211,7 +213,7 @@ request_return_stream_t() ->
         [post, HTTP_URL, HeadersProplist, Body, [
             async,
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -222,7 +224,7 @@ request_return_stream_t() ->
             async,
             option,
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -233,7 +235,7 @@ request_return_stream_t() ->
             async,
             option,
             {pool, false},
-            {ssl_options, [{verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
         ]]
     },
 
@@ -250,7 +252,7 @@ request_return_stream_t() ->
             {ssl_options, [
                 {keyfile, "a"},
                 {certfile, "b"},
-                {verify, verify_peer},
+                {depth, 99}, {verify, verify_peer},
                 {cacerts, certifi:cacerts()}
             ]},
             async,
@@ -269,6 +271,7 @@ request_return_stream_t() ->
         ]],
         [head, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
+                {depth, 99},
                 {verify, verify_none},
                 {keyfile, "a"},
                 {certfile, "b"},
