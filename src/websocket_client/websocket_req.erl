@@ -50,7 +50,8 @@
     fin = undefined :: undefined | fin(),
     opcode = undefined :: undefined | opcode(),
     continuation = undefined :: undefined | binary(),
-    continuation_opcode = undefined :: undefined | opcode()
+    continuation_opcode = undefined :: undefined | opcode(),
+    cookie = undefined :: cookie()
 }).
 
 -opaque req() :: #websocket_req{}.
@@ -68,7 +69,10 @@
 -type fin() :: 0 | 1.
 -export_type([fin/0]).
 
--export([new/8,
+-type cookie() :: undefined | {Name :: binary(), Value :: binary()}.
+-export_type([cookie/0]).
+
+-export([new/9,
     protocol/2, protocol/1,
     host/2, host/1,
     port/2, port/1,
@@ -83,6 +87,7 @@
     opcode/2, opcode/1,
     continuation/2, continuation/1,
     continuation_opcode/2, continuation_opcode/1,
+    cookie/2, cookie/1,
     get/2, set/2
 ]).
 
@@ -92,14 +97,15 @@
 ]).
 
 -spec new(protocol(), string(), inet:port_number(),
-    string(), inet:socket() | ssl:socket(),
+    string(), cookie(), inet:socket() | ssl:socket(),
     module(), module(), binary()) -> req().
-new(Protocol, Host, Port, Path, Socket, Transport, Handler, Key) ->
+new(Protocol, Host, Port, Path, Cookie, Socket, Transport, Handler, Key) ->
     #websocket_req{
         protocol = Protocol,
         host = Host,
         port = Port,
         path = Path,
+        cookie = Cookie,
         socket = Socket,
         transport = Transport,
         handler = Handler,
@@ -235,6 +241,13 @@ continuation_opcode(#websocket_req{continuation_opcode = C}) -> C.
 continuation_opcode(C, Req) ->
     Req#websocket_req{continuation_opcode = C}.
 
+-spec cookie(req()) -> undefined | cookie().
+cookie(#websocket_req{cookie = C}) -> C.
+
+-spec cookie(undefined | cookie(), req()) -> req().
+cookie(C, Req) ->
+    Req#websocket_req{cookie = C}.
+
 
 -spec get(atom(), req()) -> any(); ([atom()], req()) -> [any()].
 get(List, Req) when is_list(List) ->
@@ -256,7 +269,8 @@ g(remaining, #websocket_req{remaining = Ret}) -> Ret;
 g(fin, #websocket_req{fin = Ret}) -> Ret;
 g(opcode, #websocket_req{opcode = Ret}) -> Ret;
 g(continuation, #websocket_req{continuation = Ret}) -> Ret;
-g(continuation_opcode, #websocket_req{continuation_opcode = Ret}) -> Ret.
+g(continuation_opcode, #websocket_req{continuation_opcode = Ret}) -> Ret;
+g(cookie, #websocket_req{cookie = Ret}) -> Ret.
 
 
 -spec set([{atom(), any()}], Req) -> Req when Req :: req().
@@ -283,4 +297,6 @@ set([{continuation, Val} | Tail], Req) ->
     set(Tail, Req#websocket_req{continuation = Val});
 set([{continuation_opcode, Val} | Tail], Req) ->
     set(Tail, Req#websocket_req{continuation_opcode = Val});
+set([{cookie, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{cookie = Val});
 set([], Req) -> Req.
