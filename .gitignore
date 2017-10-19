@@ -3,6 +3,8 @@
 .settings
 .eunit
 .dialyzer.plt
+.rebar
+.rebar3
 
 *.iml
 *.sublime*
@@ -19,3 +21,4 @@ doc
 priv
 _build
 compile_commands.json
+ebin

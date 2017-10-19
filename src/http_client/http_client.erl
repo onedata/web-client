@@ -53,12 +53,10 @@ patch | purge. %% RFC-5789
 
 % All possible request options
 -type opt() ::
-%% to perform a https request without verifying the server cert
-insecure |
 %% to pass tcp options
 {connect_options, [gen_tcp:option()]} |
 %% to pass ssl options
-{ssl_options, [ssl:ssl_option()]} |
+{ssl_options, [ssl_opt()]} |
 %% Specifying maximum body length that can be automatically returned
 %% from request. By default, whole body is returned regardless of its size.
 %% NOTE: in case of a large body, function request_return_stream/5
@@ -75,12 +73,24 @@ insecure |
 {max_redirect, integer()} |
 %% false by default, to force the redirection even on POST
 {force_redirect, boolean()} |
-%% timeout used when estabilishing a connection, in milliseconds. Default: 8000.
+%% timeout used when establishing a connection, in milliseconds. Default: 8000.
 {connect_timeout, infinity | integer()} |
 %% timeout used when receiving a connection. Default: 5000.
 {recv_timeout, infinity | integer()} |
 %% to connect via a proxy
 {proxy, proxy_opt()}.
+
+% Security flags indicating verification type on SSL layer.
+%    true -> will cause peer cert and hostname validation
+%    only_verify_peercert -> will only verify peer cert and ignore hostname
+%    false -> will NOT PERFORM ANY validation
+-type secure_flag() :: true | false | only_verify_peercert.
+
+% SSL options that can be passed to web_client
+-type ssl_opt() :: {secure, secure_flag()} |
+{certfile, string()} |
+{keyfile, string()} |
+{cacerts, [Der :: binary()]}.
 
 % Proxy options (one of them can be used)
 -type proxy_opt() ::
@@ -108,8 +118,8 @@ binary() |
 % Performs the request, but instead the body return the ref for streaming.
 -export([request_return_stream/5]).
 
--export_type([method/0, url/0, headers/0, body/0, code/0,
-    hackney_opts/0, opts/0, opt/0, proxy_opt/0, response/0]).
+-export_type([method/0, url/0, headers/0, body/0, code/0, opts/0, response/0,
+    secure_flag/0, opt/0, ssl_opt/0, proxy_opt/0, hackney_opts/0]).
 
 
 %%%===================================================================
@@ -413,13 +423,23 @@ request_return_stream(Method, URL, Headers, Body, Opts) ->
     Response :: response() | {ok, StreamRef :: term()}.
 do_request(Method, URL, Headers, Body, Opts) ->
     HeadersProplist = maps:to_list(Headers),
-    Opts2 = transport_opts:expand_hackney_verify_cacert_opts([{pool, false} | Opts]),
-    case hackney:request(Method, URL, HeadersProplist, Body, Opts2) of
+    % Do not use connection pools
+    Opts2 = [{pool, false} | Opts],
+    Opts3 = case should_use_ssl(URL) of
+        true ->
+            SslOpts = proplists:get_value(ssl_options, Opts, []),
+            % resolve SSL opts based on secure flag.
+            store_option({ssl_options, secure_ssl_opts:expand(URL, SslOpts)}, Opts2);
+        false ->
+            Opts2
+    end,
+    case hackney:request(Method, URL, HeadersProplist, Body, Opts3) of
         {ok, RespCode, RespHeaders, RespBody} ->
             {ok, RespCode, maps:from_list(RespHeaders), RespBody};
         Other ->
             Other
     end.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -431,3 +451,18 @@ do_request(Method, URL, Headers, Body, Opts) ->
 -spec store_option(Opt :: {atom(), term()}, hackney_opts()) -> hackney_opts().
 store_option({Key, _Value} = Opt, Opts) ->
     [Opt | proplists:delete(Key, Opts)].
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Decides if SSL should be used for given URL based on protocol.
+%% @end
+%%--------------------------------------------------------------------
+-spec should_use_ssl(url()) -> boolean().
+should_use_ssl(Str) when is_list(Str) ->
+    should_use_ssl(list_to_binary(Str));
+should_use_ssl(<<"https:", _/binary>>) ->
+    true;
+should_use_ssl(_) ->
+    false.

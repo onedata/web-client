@@ -31,6 +31,8 @@ main_test_() ->
         ]
     }.
 
+-define(DEFAULT_SSL_OPTS(__Url), secure_ssl_opts:expand(__Url, [])).
+
 
 % Checks if API function calls are properly translated to hackney calls
 api_t() ->
@@ -55,8 +57,7 @@ api_t() ->
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, undefined},
-            {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {pool, false}
         ]]
     },
 
@@ -67,8 +68,7 @@ api_t() ->
         [delete, HTTP_URL, [], <<>>, [
             with_body,
             {max_body, undefined},
-            {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {pool, false}
         ]]
     },
 
@@ -81,8 +81,7 @@ api_t() ->
         [get, HTTP_URL, HeadersProplist, Body, [
             with_body,
             {max_body, 12123},
-            {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {pool, false}
         ]]
     },
 
@@ -94,7 +93,7 @@ api_t() ->
             with_body,
             {max_body, undefined},
             {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, ?DEFAULT_SSL_OPTS(HTTPS_URL)}
         ]]
     },
 
@@ -109,68 +108,34 @@ api_t() ->
         ]],
         [post, HTTPS_URL, HeadersProplist, Body, [
             option,
-            {ssl_options, [
-                {keyfile, "a"},
-                {certfile, "b"},
-                {depth, 99},
-                {verify, verify_peer},
-                {cacerts, certifi:cacerts()}
-            ]},
+            {ssl_options, [{keyfile, "a"}, {certfile, "b"} | ?DEFAULT_SSL_OPTS(HTTPS_URL)]},
             with_body,
             {max_body, undefined},
             {pool, false}
         ]]
     },
 
-    % 6. test: HTTPS request with some ssl options overriding verify_type
+    % 6. test: insecure HTTPS request
     Test6 = {
-        put,
-        [HTTPS_URL, HeadersMap, Body, [
-            {ssl_options, [
-                {verify, verify_none},
-                {keyfile, "a"},
-                {certfile, "b"}
-            ]}
-        ]],
-        [put, HTTPS_URL, HeadersProplist, Body, [
-            {ssl_options, [
-                {depth, 99},
-                {verify, verify_none},
-                {keyfile, "a"},
-                {certfile, "b"},
-                {cacerts, certifi:cacerts()}
-            ]},
-            with_body,
-            {max_body, undefined},
-            {pool, false}
-        ]]
-    },
-
-    % 7. test: insecure HTTPS request
-    Test7 = {
         post,
-        [HTTPS_URL, HeadersMap, Body, [insecure]],
+        [HTTPS_URL, HeadersMap, Body, [{ssl_options, [{secure, false}]}]],
         [post, HTTPS_URL, HeadersProplist, Body, [
-            insecure,
+            {ssl_options, [{verify, verify_none}]},
             with_body,
             {max_body, undefined},
             {pool, false}
         ]]
     },
 
-    % 8. test: insecure HTTPS request with some ssl options
-    Test8 = {
+    % 7. test: insecure HTTPS request with some ssl options
+    Test7 = {
         get,
         [HTTPS_URL, HeadersMap, Body, [
-            insecure,
-            {ssl_options, [{keyfile, "a"}, {certfile, "b"}]},
+            {ssl_options, [{secure, false}, {keyfile, "a"}, {certfile, "b"}]},
             {max_body, 987665}
         ]],
         [get, HTTPS_URL, HeadersProplist, Body, [
-            {ssl_options, [
-                {keyfile, "a"}, {certfile, "b"}
-            ]},
-            insecure,
+            {ssl_options, [{verify, verify_none}, {keyfile, "a"}, {certfile, "b"}]},
             with_body,
             {max_body, 987665},
             {pool, false}
@@ -187,7 +152,7 @@ api_t() ->
                     {ok, 200, [], <<>>}
                 end),
             ?assertEqual({ok, 200, #{}, <<>>}, erlang:apply(http_client, Method, Args))
-        end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7, Test8]),
+        end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7]),
     ?assert(meck:validate(hackney)).
 
 
@@ -212,8 +177,7 @@ request_return_stream_t() ->
         [post, HTTP_URL, HeadersMap, Body, []],
         [post, HTTP_URL, HeadersProplist, Body, [
             async,
-            {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {pool, false}
         ]]
     },
 
@@ -223,8 +187,7 @@ request_return_stream_t() ->
         [delete, HTTP_URL, HeadersProplist, Body, [
             async,
             option,
-            {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {pool, false}
         ]]
     },
 
@@ -235,7 +198,7 @@ request_return_stream_t() ->
             async,
             option,
             {pool, false},
-            {ssl_options, [{depth, 99}, {verify, verify_peer}, {cacerts, certifi:cacerts()}]}
+            {ssl_options, ?DEFAULT_SSL_OPTS(HTTPS_URL)}
         ]]
     },
 
@@ -250,59 +213,32 @@ request_return_stream_t() ->
         [put, HTTPS_URL, HeadersProplist, Body, [
             option,
             {ssl_options, [
-                {keyfile, "a"},
-                {certfile, "b"},
-                {depth, 99}, {verify, verify_peer},
-                {cacerts, certifi:cacerts()}
+                {keyfile, "a"}, {certfile, "b"} | ?DEFAULT_SSL_OPTS(HTTPS_URL)
             ]},
             async,
             {pool, false}
         ]]
     },
 
-    % 5. test: HTTPS request with some ssl options overriding verify
+    % 5. test: insecure HTTPS request
     Test5 = {
-        [head, HTTPS_URL, HeadersMap, Body, [
-            {ssl_options, [
-                {verify, verify_none},
-                {keyfile, "a"},
-                {certfile, "b"}
-            ]}
-        ]],
-        [head, HTTPS_URL, HeadersProplist, Body, [
-            {ssl_options, [
-                {depth, 99},
-                {verify, verify_none},
-                {keyfile, "a"},
-                {certfile, "b"},
-                {cacerts, certifi:cacerts()}
-            ]},
-            async,
-            {pool, false}
-        ]]
-    },
-
-    % 6. test: insecure HTTPS request
-    Test6 = {
-        [post, HTTPS_URL, HeadersMap, Body, [insecure]],
+        [post, HTTPS_URL, HeadersMap, Body, [{ssl_options, [{secure, false}]}]],
         [post, HTTPS_URL, HeadersProplist, Body, [
-            insecure,
+            {ssl_options, [{verify, verify_none}]},
             async,
             {pool, false}
         ]]
     },
 
-    % 7. test: insecure HTTPS request with some ssl options
-    Test7 = {
+    % 6. test: insecure HTTPS request with some ssl options
+    Test6 = {
         [delete, HTTPS_URL, HeadersMap, Body, [
-            insecure,
-            {ssl_options, [{keyfile, "a"}, {certfile, "b"}]}
+            {ssl_options, [{secure, false}, {keyfile, "a"}, {certfile, "b"}]}
         ]],
         [delete, HTTPS_URL, HeadersProplist, Body, [
             {ssl_options, [
-                {keyfile, "a"}, {certfile, "b"}
+                {verify, verify_none}, {keyfile, "a"}, {certfile, "b"}
             ]},
-            insecure,
             async,
             {pool, false}
         ]]
@@ -318,7 +254,7 @@ request_return_stream_t() ->
                     {ok, whatever}
                 end),
             ?assertEqual({ok, whatever}, erlang:apply(http_client, request_return_stream, Args))
-        end, [Test1, Test2, Test3, Test4, Test5, Test6, Test7]),
+        end, [Test1, Test2, Test3, Test4, Test5, Test6]),
     ?assert(meck:validate(hackney)).
 
 
