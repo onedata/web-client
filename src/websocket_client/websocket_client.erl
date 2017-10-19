@@ -68,27 +68,24 @@ cast(Client, Frame) ->
     no_return().
 ws_client_init(Handler, Protocol, Host, Port, Path, Cookie, Args, TransportOpts) ->
     Transport = case Protocol of
-                    wss ->
-                        ssl;
-                    ws ->
-                        gen_tcp
-                end,
+        wss -> ssl;
+        ws -> gen_tcp
+    end,
     SockReply = case Transport of
-                    ssl ->
-                        ExpandedOpts = transport_opts:expand_ssl_verify_cacert_opts(
-                            TransportOpts ++ [
-                            binary,
-                            {active, false},
-                            {packet, 0}
-                        ]),
-                        ssl:connect(Host, Port, ExpandedOpts, 6000);
-                    gen_tcp ->
-                        gen_tcp:connect(Host, Port, TransportOpts ++ [
-                            binary,
-                            {active, false},
-                            {packet, 0}
-                        ], 6000)
-                end,
+        ssl ->
+            ExpandedOpts = secure_ssl_opts:expand(Host, TransportOpts ++ [
+                binary,
+                {active, false},
+                {packet, 0}
+            ]),
+            ssl:connect(Host, Port, ExpandedOpts, 6000);
+        gen_tcp ->
+            gen_tcp:connect(Host, Port, TransportOpts ++ [
+                binary,
+                {active, false},
+                {packet, 0}
+            ], 6000)
+    end,
     {ok, Socket} = case SockReply of
         {ok, Sock} ->
             {ok, Sock};
@@ -107,14 +104,14 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Cookie, Args, TransportOpts)
         Handler,
         generate_ws_key()
     ),
-        {ok, Buffer} = case websocket_handshake(WSReq) of
-            {ok, Binary} ->
-                proc_lib:init_ack({ok, self()}),
-                {ok, Binary};
-            {error, _} = HandshakeError ->
-                proc_lib:init_ack(HandshakeError),
-                exit(normal)
-        end,
+    {ok, Buffer} = case websocket_handshake(WSReq) of
+        {ok, Binary} ->
+            proc_lib:init_ack({ok, self()}),
+            {ok, Binary};
+        {error, _} = HandshakeError ->
+            proc_lib:init_ack(HandshakeError),
+            exit(normal)
+    end,
     try
         {ok, HandlerState, KeepAlive} = case Handler:init(Args, WSReq) of
             {ok, HS} ->

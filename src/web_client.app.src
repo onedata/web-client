@@ -10,6 +10,10 @@
             ssl,
             hackney
         ]},
-        {env, []}
+        {env, [
+            % This option turns off all verification procedures over SSL
+            % connections. USE WITH CARE, only for testing purposes.
+            {force_insecure_connections, false}
+        ]}
     ]
 }.
