@@ -51,7 +51,7 @@
     opcode = undefined :: undefined | opcode(),
     continuation = undefined :: undefined | binary(),
     continuation_opcode = undefined :: undefined | opcode(),
-    cookie = undefined :: cookie()
+    authorization = undefined :: authorization()
 }).
 
 -opaque req() :: #websocket_req{}.
@@ -69,8 +69,10 @@
 -type fin() :: 0 | 1.
 -export_type([fin/0]).
 
--type cookie() :: undefined | {Name :: binary(), Value :: binary()}.
--export_type([cookie/0]).
+-type authorization() :: undefined |
+    {cookie, {Name :: binary(), Value :: binary()}} |
+    {macaroon, Value :: binary()}.
+-export_type([authorization/0]).
 
 -export([new/9,
     protocol/2, protocol/1,
@@ -87,7 +89,7 @@
     opcode/2, opcode/1,
     continuation/2, continuation/1,
     continuation_opcode/2, continuation_opcode/1,
-    cookie/2, cookie/1,
+    authorization/2, authorization/1,
     get/2, set/2
 ]).
 
@@ -97,15 +99,15 @@
 ]).
 
 -spec new(protocol(), string(), inet:port_number(),
-    string(), cookie(), inet:socket() | ssl:socket(),
+    string(), authorization(), inet:socket() | ssl:socket(),
     module(), module(), binary()) -> req().
-new(Protocol, Host, Port, Path, Cookie, Socket, Transport, Handler, Key) ->
+new(Protocol, Host, Port, Path, Authorization, Socket, Transport, Handler, Key) ->
     #websocket_req{
         protocol = Protocol,
         host = Host,
         port = Port,
         path = Path,
-        cookie = Cookie,
+        authorization = Authorization,
         socket = Socket,
         transport = Transport,
         handler = Handler,
@@ -241,12 +243,12 @@ continuation_opcode(#websocket_req{continuation_opcode = C}) -> C.
 continuation_opcode(C, Req) ->
     Req#websocket_req{continuation_opcode = C}.
 
--spec cookie(req()) -> undefined | cookie().
-cookie(#websocket_req{cookie = C}) -> C.
+-spec authorization(req()) -> undefined | authorization().
+authorization(#websocket_req{authorization = Auth}) -> Auth.
 
--spec cookie(undefined | cookie(), req()) -> req().
-cookie(C, Req) ->
-    Req#websocket_req{cookie = C}.
+-spec authorization(undefined | authorization(), req()) -> req().
+authorization(Auth, Req) ->
+    Req#websocket_req{authorization = Auth}.
 
 
 -spec get(atom(), req()) -> any(); ([atom()], req()) -> [any()].
@@ -270,7 +272,7 @@ g(fin, #websocket_req{fin = Ret}) -> Ret;
 g(opcode, #websocket_req{opcode = Ret}) -> Ret;
 g(continuation, #websocket_req{continuation = Ret}) -> Ret;
 g(continuation_opcode, #websocket_req{continuation_opcode = Ret}) -> Ret;
-g(cookie, #websocket_req{cookie = Ret}) -> Ret.
+g(authorization, #websocket_req{authorization = Ret}) -> Ret.
 
 
 -spec set([{atom(), any()}], Req) -> Req when Req :: req().
@@ -297,6 +299,6 @@ set([{continuation, Val} | Tail], Req) ->
     set(Tail, Req#websocket_req{continuation = Val});
 set([{continuation_opcode, Val} | Tail], Req) ->
     set(Tail, Req#websocket_req{continuation_opcode = Val});
-set([{cookie, Val} | Tail], Req) ->
-    set(Tail, Req#websocket_req{cookie = Val});
+set([{authorization, Val} | Tail], Req) ->
+    set(Tail, Req#websocket_req{authorization = Val});
 set([], Req) -> Req.

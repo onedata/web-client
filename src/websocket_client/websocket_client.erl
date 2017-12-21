@@ -43,14 +43,14 @@
 start_link(URL, Handler, Args, TransportOpts) ->
     start_link(URL, undefined, Handler, Args, TransportOpts).
 
--spec start_link(URL :: string(), Cookie :: websocket_req:cookie(),
+-spec start_link(URL :: string(), Authorization :: websocket_req:authorization(),
     Handler :: module(), Args :: list(), TransportOpts :: list()) ->
     {ok, pid()} | {error, term()}.
-start_link(URL, Cookie, Handler, Args, TransportOpts) ->
+start_link(URL, Authorization, Handler, Args, TransportOpts) ->
     case http_uri:parse(URL, [{scheme_defaults, [{ws, 80}, {wss, 443}]}]) of
         {ok, {Protocol, _, Host, Port, Path, Query}} ->
             proc_lib:start_link(?MODULE, ws_client_init,
-                [Handler, Protocol, Host, Port, Path ++ Query, Cookie, Args, TransportOpts]);
+                [Handler, Protocol, Host, Port, Path ++ Query, Authorization, Args, TransportOpts]);
         {error, _} = Error ->
             Error
     end.
@@ -64,9 +64,9 @@ cast(Client, Frame) ->
 %% @doc Create socket, execute handshake, and enter loop
 -spec ws_client_init(Handler :: module(), Protocol :: websocket_req:protocol(),
     Host :: string(), Port :: inet:port_number(), Path :: string(),
-    Cookie :: websocket_req:cookie(), Args :: list(), TransportOpts :: list()) ->
+    Authorization :: websocket_req:authorization(), Args :: list(), TransportOpts :: list()) ->
     no_return().
-ws_client_init(Handler, Protocol, Host, Port, Path, Cookie, Args, TransportOpts) ->
+ws_client_init(Handler, Protocol, Host, Port, Path, Authorization, Args, TransportOpts) ->
     Transport = case Protocol of
         wss -> ssl;
         ws -> gen_tcp
@@ -98,7 +98,7 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Cookie, Args, TransportOpts)
         Host,
         Port,
         Path,
-        Cookie,
+        Authorization,
         Socket,
         Transport,
         Handler,
@@ -157,14 +157,16 @@ ws_client_init(Handler, Protocol, Host, Port, Path, Cookie, Args, TransportOpts)
 -spec websocket_handshake(WSReq :: websocket_req:req()) ->
     {error, term()} | {ok, binary()}.
 websocket_handshake(WSReq) ->
-    [Protocol, Path, Host, Key, Transport, Socket, Cookie] = websocket_req:get([
-        protocol, path, host, key, transport, socket, cookie
+    [Protocol, Path, Host, Key, Transport, Socket, Authorization] = websocket_req:get([
+        protocol, path, host, key, transport, socket, authorization
     ], WSReq),
-    CookieHeader = case Cookie of
+    AuthorizationHeader = case Authorization of
         undefined ->
             <<"">>;
-        {Name, Value} ->
-            <<"\r\nCookie: ", Name/binary, "=", Value/binary>>
+        {cookie, {Name, Value}} ->
+            <<"\r\nCookie: ", Name/binary, "=", Value/binary>>;
+        {macaroon, Value} ->
+            <<"\r\nMacaroon: ", Value/binary>>
     end,
     Handshake = [<<"GET ">>, Path,
         <<" HTTP/1.1"
@@ -175,7 +177,7 @@ websocket_handshake(WSReq) ->
         <<"\r\nOrigin: ">>, atom_to_binary(Protocol, utf8), <<"://">>, Host,
         <<"\r\nSec-WebSocket-Protocol: "
         "\r\nSec-WebSocket-Version: 13">>,
-        CookieHeader,
+        AuthorizationHeader,
         <<"\r\n\r\n">>],
     Transport = websocket_req:transport(WSReq),
     Socket = websocket_req:socket(WSReq),
