@@ -59,7 +59,7 @@ expand(Url, SslOpts) ->
                     CommonOpts
             end
     end,
-    NewOpts ++ proplists:delete(secure, SslOpts).
+    NewOpts ++ proplists:delete(cacerts, proplists:delete(secure, SslOpts)).
 
 %%%===================================================================
 %%% Private functions; code from hackney (MIT licence) and rebar3 (BSD license)
