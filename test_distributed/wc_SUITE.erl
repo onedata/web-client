@@ -59,16 +59,15 @@ all() -> [
 % Starts required deps and an echo server written in cowboy.
 init_per_suite(Config) ->
     crypto:start(),
-    application:start(ranch),
-    application:start(cowboy),
+    {ok, AppsStarted} = application:ensure_all_started(cowboy),
     ok = echo_server:start(),
-    Config.
+    [{apps_started, lists:reverse(AppsStarted)} | Config].
 
 
 % Cleanup
 end_per_suite(Config) ->
-    application:stop(cowboy),
-    application:stop(ranch),
+    AppsStarted = ?config(apps_started, Config),
+    lists:foreach(fun(App) -> application:stop(App) end, AppsStarted),
     crypto:stop(),
     Config.
 

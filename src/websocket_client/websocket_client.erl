@@ -37,6 +37,7 @@
 -export([start_link/4, start_link/5, cast/2, send/2]).
 -export([ws_client_init/8]).
 
+
 %% @doc Start the websocket client
 -spec start_link(URL :: string(), Handler :: module(), Args :: list(), TransportOpts :: list()) ->
     {ok, pid()} | {error, term()}.
