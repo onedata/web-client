@@ -49,17 +49,24 @@ expand(Url, SslOpts) ->
             ],
             case SecureFlag of
                 true ->
-                    #{host := Host} = url_utils:parse(Url),
+                    % If provided, use hostname specified in opt for validation,
+                    % otherwise use the hostname parsed from URL.
+                    HostBin = case proplists:get_value(hostname, SslOpts) of
+                        undefined -> maps:get(host, url_utils:parse(Url));
+                        Host -> Host
+                    end,
                     VerifyFun = {
                         fun ssl_verify_hostname:verify_fun/3,
-                        [{check_hostname, binary_to_list(Host)}]
+                        [{check_hostname, binary_to_list(HostBin)}]
                     },
                     [{verify_fun, VerifyFun} | CommonOpts];
                 only_verify_peercert ->
                     CommonOpts
             end
     end,
-    NewOpts ++ proplists:delete(cacerts, proplists:delete(secure, SslOpts)).
+    NewOpts ++ proplists:delete(cacerts,
+        proplists:delete(secure,
+            proplists:delete(hostname, SslOpts))).
 
 %%%===================================================================
 %%% Private functions; code from hackney (MIT licence) and rebar3 (BSD license)

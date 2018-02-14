@@ -88,6 +88,13 @@ patch | purge. %% RFC-5789
 
 % SSL options that can be passed to web_client
 -type ssl_opt() :: {secure, secure_flag()} |
+% Indicates to what hostname the client is connecting when in case it is
+% different then the one in URL. If specified, server's web certificate will be
+% validated against this hostname. Exemplary usage:
+%    Opts = [{ssl_options, [{hostname, <<"example.com">>}]}],
+%    get(<<"127.0.0.1">>, #{}, <<>>, Opts). <- required for verification
+%    get(<<"example.com">>, #{}, <<>>, []). <- ok, hostname taken from the URL
+{hostname, binary()} |
 {certfile, string()} |
 {keyfile, string()} |
 {cacerts, [Der :: binary()]}.
