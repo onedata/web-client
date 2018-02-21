@@ -26,8 +26,7 @@
 %% @end
 %% ===================================================================
 -module(echo_server).
-
--behaviour(cowboy_websocket_handler).
+-behaviour(cowboy_websocket).
 
 -export([
     start/0
@@ -35,14 +34,13 @@
 
 % Cowboy callbacks
 -export([
-    init/3,
-    websocket_init/3,
-    websocket_handle/3,
-    websocket_info/3,
-    websocket_terminate/3
+    init/2,
+    websocket_init/1,
+    websocket_handle/2,
+    websocket_info/2
 ]).
 
--record(state, {}).
+-record(state, {to_send}).
 
 % Start the cowboy server
 start() ->
@@ -51,39 +49,47 @@ start() ->
         {"/hello/", ?MODULE, []},
         {'_', ?MODULE, []}
     ]}]),
-    {ok, _} = cowboy:start_http(echo_listener, 2, [
-        {port, 8080},
-        {max_connections, 100}
-    ],
-        [{env, [{dispatch, Dispatch}]}]),
+    {ok, _} = cowboy:start_clear(echo_listener,
+        [
+            {port, 8080},
+            {num_acceptors, 2},
+            {max_connections, 100}
+        ],
+        #{env => #{dispatch => Dispatch}}
+    ),
     ok.
 
 
 % Upgrade to websocket in init
-init(_, _Req, _Opts) ->
-    {upgrade, protocol, cowboy_websocket}.
+init(Req, _Opts) ->
+    ParsedQs = cowboy_req:parse_qs(Req),
+    State = case proplists:lookup(<<"q">>, ParsedQs) of
+        none ->
+            #state{};
+        {<<"q">>, Text} ->
+            #state{to_send = Text}
+    end,
+    {cowboy_websocket, Req, State}.
+
 
 % Called after websocket connection is established
-websocket_init(_Transport, Req, _Opts) ->
-    case cowboy_req:qs_val(<<"q">>, Req) of
-        {undefined, Req2} -> {ok, Req2, #state{}};
-        {Text, Req2} -> self() ! {send, Text},
-            {ok, Req2, #state{}}
-    end.
+websocket_init(#state{to_send = undefined} = State) ->
+    {ok, State};
+websocket_init(#state{to_send = Text}) ->
+    self() ! {send, Text},
+    websocket_init(#state{}).
+
 
 % Called when a frame arrives, just send the same message back
-websocket_handle(Frame, Req, State) ->
-    {reply, Frame, Req, State}.
+websocket_handle(Frame, State) ->
+    {reply, Frame, State}.
+
 
 % Called when the controlling process receives a message
-% This oneis used to schedule a send action in init
-websocket_info({send, Text}, Req, State) ->
-    {reply, {text, Text}, Req, State};
+% This one is used to schedule a send action in init
+websocket_info({send, Text}, State) ->
+    {reply, {text, Text}, State};
 
 % Called when the controlling process receives a message
-websocket_info(_Msg, Req, State) ->
-    {ok, Req, State}.
-
-% Called when the WS connection is closed
-websocket_terminate(_Reason, _Req, _State) ->
-    ok.
+websocket_info(_Msg, State) ->
+    {ok, State}.
