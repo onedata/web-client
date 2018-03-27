@@ -47,22 +47,20 @@ expand(Url, SslOpts) ->
                 {cacerts, CaCerts},
                 {partial_chain, fun(Certs) -> partial_chain(CaCerts, Certs) end}
             ],
-            case SecureFlag of
+            VerifyFun = case SecureFlag of
                 true ->
                     % If provided, use hostname specified in opt for validation,
                     % otherwise use the hostname parsed from URL.
                     HostBin = case proplists:get_value(hostname, SslOpts) of
                         undefined -> maps:get(host, url_utils:parse(Url));
-                        Host -> Host
+                        Val -> Val
                     end,
-                    VerifyFun = {
-                        fun ssl_verify_hostname:verify_fun/3,
-                        [{check_hostname, binary_to_list(HostBin)}]
-                    },
-                    [{verify_fun, VerifyFun} | CommonOpts];
+                    Host = binary_to_list(HostBin),
+                    {fun ssl_verify_hostname:verify_fun/3, [{check_hostname, Host}]};
                 only_verify_peercert ->
-                    CommonOpts
-            end
+                    {fun peercert_only_verify_fun/3, []}
+            end,
+            [{verify_fun, VerifyFun} | CommonOpts]
     end,
     NewOpts ++ proplists:delete(cacerts,
         proplists:delete(secure,
@@ -110,3 +108,15 @@ find(Fun, [Head | Tail]) when is_function(Fun) ->
     end;
 find(_Fun, []) ->
     error.
+
+
+-spec peercert_only_verify_fun(term(), term(), term()) ->
+    {fail | unknown | valid, term()}.
+peercert_only_verify_fun(_, {bad_cert, _} = Reason, _) ->
+    {fail, Reason};
+peercert_only_verify_fun(_, {extension, _}, UserState) ->
+    {unknown, UserState};
+peercert_only_verify_fun(_, valid, UserState) ->
+    {valid, UserState};
+peercert_only_verify_fun(_Cert, valid_peer, UserState) ->
+    {valid, UserState}.
